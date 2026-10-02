@@ -1,264 +1,523 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PipelineQuote } from "@/lib/pipeline";
-import { PipelineFilterBar } from "./FilterBar";
-import { QuoteTable } from "./QuoteTable";
-import { QuoteSheet } from "./QuoteSheet";
-import { DEFAULT_SORT, EMPTY_FILTER, Filter, GroupBy, Sort, StageBucket } from "./types";
+import { ArrowUpRight, Plus, Search, SlidersHorizontal, X } from "lucide-react";
+import type { PipelineQuote } from "@/lib/pipeline";
+import { ProjectPreview } from "./ProjectPreview";
+import {
+  STAGE_STATUSES,
+  STAGE_TABS,
+  SORT_OPTIONS,
+  applyFilter,
+  applySort,
+  rowFlag,
+  stageMeta,
+  usd,
+  usdShort,
+} from "./project-list";
+import { DEFAULT_SORT, EMPTY_FILTER, type Filter, type GroupBy, type Sort, type StageBucket } from "./types";
 
-const fmtCurrency = (n: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
-
-const STAGE_STATUSES: Record<StageBucket, string[]> = {
-  all: [],
-  draft: ["Draft"],
-  sent: ["Sent. Awaiting Approval."],
-  signed: ["Approved and Signed", "Awaiting Payment", "Project In Progress"],
-  paid: ["Paid"],
-  lost: ["Cancelled", "Rejected"],
-  auditing: ["Auditing 🚩"],
-};
-
-const STAGE_TABS: { key: StageBucket; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "draft", label: "Draft" },
-  { key: "sent", label: "Sent · Awaiting" },
-  { key: "signed", label: "Signed" },
-  { key: "paid", label: "Paid" },
-  { key: "auditing", label: "Auditing" },
-  { key: "lost", label: "Cancelled / Rejected" },
-];
-
-function daysSince(iso: string | null): number {
-  if (!iso) return -1;
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-}
-
-function applyFilter(rows: PipelineQuote[], f: Filter): PipelineQuote[] {
-  return rows.filter((r) => {
-    if (!f.showRejected && (r.status === "Rejected" || r.status === "Cancelled")) {
-      if (f.stage !== "lost") return false;
-    }
-    if (f.search) {
-      const q = f.search.toLowerCase();
-      const hay = `${r.projectName} ${r.client} ${r.preparedBy} ${r.autonumber ?? ""}`.toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
-    if (f.stage !== "all") {
-      const allowed = STAGE_STATUSES[f.stage];
-      if (!r.status || !allowed.includes(r.status)) return false;
-    }
-    if (f.proposalType !== "all" && r.proposalType !== f.proposalType) return false;
-    if (f.client && r.client !== f.client) return false;
-    if (f.preparedBy && r.preparedBy !== f.preparedBy) return false;
-    if (f.from && r.preparedDate && r.preparedDate < f.from) return false;
-    if (f.to && r.preparedDate && r.preparedDate > f.to) return false;
-    if (f.stalledOnly) {
-      const days = daysSince(r.preparedDate);
-      const isOpen = r.status === "Sent. Awaiting Approval." || r.status === "Draft" || r.status === "Auditing 🚩";
-      if (!(isOpen && days > 14)) return false;
-    }
-    if (f.deadlineRisk !== "all") {
-      if (f.deadlineRisk === "needs-attention") {
-        if (r.deadlineRisk === "ok") return false;
-      } else if (r.deadlineRisk !== f.deadlineRisk) {
-        return false;
-      }
-    }
-    return true;
-  });
-}
-
-function applySort(rows: PipelineQuote[], s: Sort): PipelineQuote[] {
-  const dir = s.dir === "asc" ? 1 : -1;
-  return [...rows].sort((a, b) => {
-    let av: string | number = 0;
-    let bv: string | number = 0;
-    switch (s.key) {
-      case "preparedDate":
-        av = a.preparedDate ?? "";
-        bv = b.preparedDate ?? "";
-        break;
-      case "totalCost":
-        av = a.totalCost;
-        bv = b.totalCost;
-        break;
-      case "client":
-        av = a.client.toLowerCase();
-        bv = b.client.toLowerCase();
-        break;
-      case "status":
-        av = a.status ?? "";
-        bv = b.status ?? "";
-        break;
-      case "autonumber":
-        av = a.autonumber ?? 0;
-        bv = b.autonumber ?? 0;
-        break;
-      case "daysSinceSent":
-        av = daysSince(a.preparedDate);
-        bv = daysSince(b.preparedDate);
-        break;
-      case "uninvoiced":
-        av = a.uninvoiced;
-        bv = b.uninvoiced;
-        break;
-      case "invoiced":
-        av = a.invoiced;
-        bv = b.invoiced;
-        break;
-    }
-    if (av < bv) return -1 * dir;
-    if (av > bv) return 1 * dir;
-    return 0;
-  });
-}
-
-import type { PersonOption } from "@/lib/quote-types";
-
-type SprintOption = { id: string; number: number | null; status: string | null };
+const field =
+  "px-2.5 py-1.5 text-[12.5px] bg-surface border border-rule text-ink rounded-md focus:border-emerald focus:outline-none transition-colors";
 
 type Props = {
   quotes: PipelineQuote[];
-  people: PersonOption[];
-  sprints: SprintOption[];
   canEdit: boolean;
   initialFilter?: Partial<Filter>;
 };
 
-export function PipelineDashboard({ quotes, people, sprints, canEdit, initialFilter }: Props) {
+/**
+ * Projects: a two-line list to scan, with the selected project previewed
+ * beside it. Click (or ↑ ↓) selects, Enter / double-click / "Open project"
+ * opens. Below lg there's no room for the pane, so a tap opens directly.
+ */
+export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilter }: Props) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>({ ...EMPTY_FILTER, ...(initialFilter ?? {}) });
   const [sort, setSort] = useState<Sort>(DEFAULT_SORT);
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
-  const [selected, setSelected] = useState<PipelineQuote | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [stageOverrides, setStageOverrides] = useState<Record<string, string>>({});
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  // Stage changes made from the preview apply here without a reload.
+  const quotes = useMemo(
+    () => initialQuotes.map((q) => (stageOverrides[q.id] ? { ...q, status: stageOverrides[q.id] } : q)),
+    [initialQuotes, stageOverrides],
+  );
+
+  const clients = useMemo(() => [...new Set(quotes.map((q) => q.client).filter(Boolean))].sort(), [quotes]);
+  const preparers = useMemo(
+    () => [...new Set(quotes.map((q) => q.preparedBy).filter((p) => p && p !== "—"))].sort(),
+    [quotes],
+  );
 
   const groupKey = useMemo(() => {
     if (groupBy === "none") return null;
     return (q: PipelineQuote) => {
       const v = groupBy === "client" ? q.client : q.company;
-      // lib/pipeline fills a bare "—" when the lookup is empty; label the bucket instead.
       return !v || v === "—" ? `No ${groupBy}` : v;
     };
   }, [groupBy]);
 
-  const clients = useMemo(() => {
-    const s = new Set<string>();
-    for (const q of quotes) if (q.client) s.add(q.client);
-    return Array.from(s).sort();
-  }, [quotes]);
-
-  const preparers = useMemo(() => {
-    const s = new Set<string>();
-    for (const q of quotes) if (q.preparedBy && q.preparedBy !== "—") s.add(q.preparedBy);
-    return Array.from(s).sort();
-  }, [quotes]);
-
   const filtered = useMemo(() => applyFilter(quotes, filter), [quotes, filter]);
-  const sorted = useMemo(() => {
-    const rows = applySort(filtered, sort);
-    // Array.sort is stable, so grouping keeps the chosen sort order inside each group.
-    return groupKey ? rows.sort((a, b) => groupKey(a).localeCompare(groupKey(b))) : rows;
+  const rows = useMemo(() => {
+    const sorted = applySort(filtered, sort);
+    // Stable sort: grouping keeps the chosen order inside each group.
+    return groupKey ? sorted.sort((a, b) => groupKey(a).localeCompare(groupKey(b))) : sorted;
   }, [filtered, sort, groupKey]);
-  const filteredTotal = filtered.reduce((s, r) => s + r.totalCost, 0);
 
-  const filterActive =
-    !!filter.search ||
-    filter.proposalType !== "all" ||
-    !!filter.client ||
-    !!filter.preparedBy ||
-    !!filter.from ||
-    !!filter.to ||
-    filter.stalledOnly ||
-    filter.deadlineRisk !== "all" ||
-    filter.showRejected;
-
-  // Count quotes per Deal Stage tab — apply non-stage filters so counts reflect current view.
-  const baseForCounts = useMemo(() => {
-    const f = { ...filter, stage: "all" as StageBucket };
-    return applyFilter(quotes, f);
-  }, [quotes, filter]);
-
+  // Tab counts reflect every other filter. Lost deals are always counted for
+  // their own tab, even while they're hidden from the others.
   const tabCounts = useMemo(() => {
-    const counts: Record<StageBucket, number> = {
-      all: baseForCounts.length, draft: 0, sent: 0, signed: 0, paid: 0, lost: 0, auditing: 0,
-    };
-    for (const r of baseForCounts) {
-      for (const tab of STAGE_TABS) {
-        if (tab.key === "all") continue;
-        if (r.status && STAGE_STATUSES[tab.key].includes(r.status)) counts[tab.key]++;
+    const base = applyFilter(quotes, { ...filter, stage: "all", showRejected: true });
+    const counts = { all: 0, draft: 0, sent: 0, signed: 0, paid: 0, lost: 0, auditing: 0 } as Record<StageBucket, number>;
+    for (const r of base) {
+      const lost = STAGE_STATUSES.lost.includes(r.status ?? "");
+      if (!lost || filter.showRejected) counts.all++;
+      for (const t of STAGE_TABS) {
+        if (t.key !== "all" && r.status && STAGE_STATUSES[t.key].includes(r.status)) counts[t.key]++;
       }
     }
     return counts;
-  }, [baseForCounts]);
+  }, [quotes, filter]);
+
+  // The headline numbers, over everything — independent of the current view.
+  const summary = useMemo(() => {
+    const awaiting = quotes.filter((q) => q.status === "Sent. Awaiting Approval.");
+    const late = quotes.filter((q) => rowFlag(q)?.tone === "red");
+    const notInvoiced = quotes.reduce((s, q) => s + q.uninvoiced, 0);
+    const active = quotes.filter((q) => STAGE_STATUSES.signed.includes(q.status ?? ""));
+    return {
+      activeCount: active.length,
+      activeValue: active.reduce((s, q) => s + q.totalCost, 0),
+      awaitingCount: awaiting.length,
+      awaitingValue: awaiting.reduce((s, q) => s + q.totalCost, 0),
+      lateCount: late.length,
+      notInvoiced,
+    };
+  }, [quotes]);
+
+  const advancedCount =
+    (filter.proposalType !== "all" ? 1 : 0) +
+    (filter.client ? 1 : 0) +
+    (filter.preparedBy ? 1 : 0) +
+    (filter.from || filter.to ? 1 : 0) +
+    (filter.deadlineRisk !== "all" ? 1 : 0) +
+    (filter.stalledOnly ? 1 : 0) +
+    (filter.showRejected ? 1 : 0);
+  const anyFilter = advancedCount > 0 || !!filter.search || filter.stage !== "all";
+
+  // Keep a valid selection: the first visible row when the old one drops out.
+  const selected = rows.find((r) => r.id === selectedId) ?? rows[0] ?? null;
+
+  const open = (q: PipelineQuote) => router.push(`/pipeline/${q.id}`);
+  const isWide = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+
+  const moveSelection = (delta: number) => {
+    if (rows.length === 0) return;
+    const i = selected ? rows.findIndex((r) => r.id === selected.id) : -1;
+    const next = rows[Math.min(rows.length - 1, Math.max(0, i + delta))];
+    setSelectedId(next.id);
+    const el = document.getElementById(`project-row-${next.id}`);
+    el?.focus({ preventScroll: true });
+    el?.scrollIntoView({ block: "nearest" });
+  };
+
+  // "/" jumps to search from anywhere on the page.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (e.key !== "/" || e.metaKey || e.ctrlKey) return;
+      if (t.closest("input, textarea, select, [contenteditable=true]")) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const set = <K extends keyof Filter>(k: K, v: Filter[K]) => setFilter((f) => ({ ...f, [k]: v }));
+
+  let lastGroup: string | null = null;
+  const groupTotals = useMemo(() => {
+    const m = new Map<string, { count: number; total: number }>();
+    if (!groupKey) return m;
+    for (const r of rows) {
+      const k = groupKey(r);
+      const g = m.get(k) ?? { count: 0, total: 0 };
+      g.count++;
+      g.total += r.totalCost;
+      m.set(k, g);
+    }
+    return m;
+  }, [rows, groupKey]);
 
   return (
     <>
-      {/* Deal Stage tabs */}
-      <div className="mb-3 flex items-center gap-1 flex-wrap border-b border-rule">
-        {STAGE_TABS.map((t) => {
-          const active = filter.stage === t.key;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setFilter({ ...filter, stage: t.key })}
-              className={`px-3 py-2 text-[12px] font-medium border-b-2 -mb-px transition-colors ${
-                active
-                  ? "border-emerald text-ink-strong"
-                  : "border-transparent text-ink-muted hover:text-ink"
-              }`}
+      <header className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <h1 className="text-[20px] font-semibold text-ink-strong leading-tight tracking-tight">Projects</h1>
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-muted">
+            <SummaryLink
+              onClick={() => {
+                setFilter({ ...EMPTY_FILTER, stage: "sent" });
+                setSort(DEFAULT_SORT);
+              }}
+              active={filter.stage === "sent" && advancedCount === 0 && !filter.search}
             >
-              {t.label}
-              <span className={`ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 rounded-full text-[10px] font-mono tabnum ${
-                active ? "bg-emerald-soft text-emerald" : "bg-bg-elevated text-ink-faint"
-              }`}>
-                {tabCounts[t.key]}
-              </span>
-            </button>
-          );
-        })}
+              <span className="text-amber font-semibold tabnum">{summary.awaitingCount}</span> awaiting approval
+              <span className="tabnum"> ({usd(summary.awaitingValue)})</span>
+            </SummaryLink>
+            <SummaryLink
+              onClick={() => {
+                setFilter({ ...EMPTY_FILTER, stage: "signed" });
+                setSort(DEFAULT_SORT);
+              }}
+              active={filter.stage === "signed" && advancedCount === 0 && !filter.search}
+            >
+              <span className="text-sky font-semibold tabnum">{summary.activeCount}</span> active
+              <span className="tabnum"> ({usd(summary.activeValue)})</span>
+            </SummaryLink>
+            <SummaryLink
+              onClick={() => {
+                setFilter({ ...EMPTY_FILTER, deadlineRisk: "overdue" });
+                setSort(DEFAULT_SORT);
+              }}
+              active={filter.deadlineRisk === "overdue"}
+            >
+              <span className={`font-semibold tabnum ${summary.lateCount > 0 ? "text-red" : "text-ink"}`}>{summary.lateCount}</span>{" "}
+              late {summary.lateCount === 1 ? "delivery" : "deliveries"}
+            </SummaryLink>
+            <SummaryLink
+              onClick={() => {
+                setFilter(EMPTY_FILTER);
+                setSort({ key: "uninvoiced", dir: "desc" });
+              }}
+              active={sort.key === "uninvoiced" && !anyFilter}
+            >
+              <span className="text-ink-strong font-semibold tabnum">{usd(summary.notInvoiced)}</span> not invoiced yet
+            </SummaryLink>
+          </p>
+        </div>
+        {canEdit && (
+          <Link
+            href="/clients"
+            title="Proposals start from an account: pick the account, then New proposal"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold bg-emerald text-bg rounded-md hover:bg-emerald/85 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          >
+            <Plus aria-hidden="true" className="h-4 w-4" />
+            New proposal
+          </Link>
+        )}
+      </header>
+
+      {/* Stage tabs */}
+      <div className="mb-3 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div role="tablist" aria-label="Deal stage" className="flex gap-1 border-b border-rule min-w-max">
+          {STAGE_TABS.map((t) => {
+            const active = filter.stage === t.key;
+            return (
+              <button
+                key={t.key}
+                role="tab"
+                aria-selected={active}
+                type="button"
+                onClick={() => set("stage", t.key)}
+                className={`px-3 py-2 text-[13px] border-b-2 -mb-px whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:bg-bg-elevated ${
+                  active ? "border-emerald text-ink-strong font-medium" : "border-transparent text-ink-muted hover:text-ink"
+                }`}
+              >
+                {t.label}
+                <span className={`ml-1.5 tabnum text-[12px] ${active ? "text-emerald" : "text-ink-muted"}`}>
+                  {tabCounts[t.key]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <PipelineFilterBar
-        filter={filter}
-        setFilter={setFilter}
-        clients={clients}
-        preparers={preparers}
-        totalCount={quotes.length}
-        filteredCount={filtered.length}
-        groupBy={groupBy}
-        setGroupBy={setGroupBy}
-      />
+      {/* Toolbar */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <label className="relative w-full sm:w-auto sm:flex-1 sm:max-w-md">
+          <span className="sr-only">Search projects</span>
+          <Search aria-hidden="true" className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-muted" />
+          <input
+            ref={searchRef}
+            type="search"
+            value={filter.search}
+            onChange={(e) => set("search", e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                moveSelection(0);
+              }
+              if (e.key === "Enter" && selected) open(selected);
+            }}
+            placeholder="Search project, client, account, quote #"
+            className={`${field} w-full pl-8 pr-8`}
+          />
+          <kbd className="hidden sm:block absolute right-2 top-1/2 -translate-y-1/2 px-1.5 rounded border border-rule text-[11px] text-ink-muted">/</kbd>
+        </label>
 
-      {filterActive && (
-        <div className="mb-3 text-[12px] text-ink-muted">
-          Filtered total: <span className="text-ink-strong font-semibold tabnum">{fmtCurrency(filteredTotal)}</span>
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((v) => !v)}
+          aria-expanded={filtersOpen}
+          aria-controls="project-filters"
+          className={`${field} inline-flex items-center gap-1.5 ${advancedCount > 0 ? "border-emerald/60 text-ink-strong" : ""}`}
+        >
+          <SlidersHorizontal aria-hidden="true" className="h-3.5 w-3.5" />
+          Filters
+          {advancedCount > 0 && <span className="tabnum text-emerald">{advancedCount}</span>}
+        </button>
+
+        <select
+          aria-label="Sort"
+          value={`${sort.key}:${sort.dir}`}
+          onChange={(e) => {
+            const [key, dir] = e.target.value.split(":");
+            setSort({ key, dir } as Sort);
+          }}
+          className={`${field} cursor-pointer`}
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.label} value={`${o.sort.key}:${o.sort.dir}`}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          aria-label="Group"
+          value={groupBy}
+          onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+          className={`${field} cursor-pointer`}
+        >
+          <option value="none">No grouping</option>
+          <option value="client">Group by client</option>
+          <option value="company">Group by account</option>
+        </select>
+
+        {anyFilter && (
+          <button
+            type="button"
+            onClick={() => setFilter(EMPTY_FILTER)}
+            className="inline-flex items-center gap-1 px-2 py-1.5 text-[12.5px] text-ink-muted hover:text-ink-strong rounded-md"
+          >
+            <X aria-hidden="true" className="h-3.5 w-3.5" />
+            Clear
+          </button>
+        )}
+
+        <span className="ml-auto text-[12.5px] text-ink-muted tabnum" aria-live="polite">
+          {rows.length} {rows.length === 1 ? "project" : "projects"}
+          {anyFilter && <> · {usd(filtered.reduce((s, r) => s + r.totalCost, 0))}</>}
+        </span>
+      </div>
+
+      {filtersOpen && (
+        <div
+          id="project-filters"
+          className="mb-3 p-3 bg-surface border border-rule rounded-lg grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <FilterField label="Type">
+            <select value={filter.proposalType} onChange={(e) => set("proposalType", e.target.value as Filter["proposalType"])} className={`${field} w-full`}>
+              <option value="all">All types</option>
+              <option value="Airtable Solutions Proposal">Airtable Solutions</option>
+              <option value="Retainer Agreement">Retainer</option>
+            </select>
+          </FilterField>
+          <FilterField label="Client">
+            <select value={filter.client ?? ""} onChange={(e) => set("client", e.target.value || null)} className={`${field} w-full`}>
+              <option value="">All clients</option>
+              {clients.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </FilterField>
+          <FilterField label="Prepared by">
+            <select value={filter.preparedBy ?? ""} onChange={(e) => set("preparedBy", e.target.value || null)} className={`${field} w-full`}>
+              <option value="">Anyone</option>
+              {preparers.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </FilterField>
+          <FilterField label="Delivery deadline">
+            <select value={filter.deadlineRisk} onChange={(e) => set("deadlineRisk", e.target.value as Filter["deadlineRisk"])} className={`${field} w-full`}>
+              <option value="all">Any</option>
+              <option value="needs-attention">Late or due within 7 days</option>
+              <option value="overdue">Late</option>
+              <option value="red">Due within 3 days</option>
+              <option value="yellow">Due in 4–7 days</option>
+            </select>
+          </FilterField>
+          <div className="min-w-0">
+            <span className="block mb-1 text-[12px] text-ink-muted">Prepared between</span>
+            <div className="flex items-center gap-2">
+              <input type="date" aria-label="From" value={filter.from ?? ""} onChange={(e) => set("from", e.target.value || null)} className={`${field} w-full tabnum`} />
+              <span className="text-ink-muted text-[12px]">and</span>
+              <input type="date" aria-label="To" value={filter.to ?? ""} onChange={(e) => set("to", e.target.value || null)} className={`${field} w-full tabnum`} />
+            </div>
+          </div>
+          <div className="flex flex-col justify-end gap-2 text-[12.5px] text-ink">
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={filter.stalledOnly} onChange={(e) => set("stalledOnly", e.target.checked)} className="h-4 w-4 accent-emerald" />
+              Only stalled (no movement in 14+ days)
+            </label>
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={filter.showRejected} onChange={(e) => set("showRejected", e.target.checked)} className="h-4 w-4 accent-emerald" />
+              Include cancelled and rejected
+            </label>
+          </div>
         </div>
       )}
 
-      <QuoteTable
-        rows={sorted}
-        sort={sort}
-        setSort={setSort}
-        onRowClick={(q) => router.push(`/pipeline/${q.id}`)}
-        selectedId={selected?.id ?? null}
-        groupKey={groupKey}
-      />
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-4 lg:items-start">
+        <div className="bg-surface border border-rule rounded-lg overflow-hidden">
+          {rows.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <p className="text-[14px] text-ink-strong">No projects match.</p>
+              {anyFilter && (
+                <button type="button" onClick={() => setFilter(EMPTY_FILTER)} className="mt-2 text-[13px] text-emerald hover:underline underline-offset-4">
+                  Clear search and filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <ul
+              ref={listRef}
+              aria-label="Projects"
+              className="divide-y divide-rule-soft"
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  moveSelection(1);
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  moveSelection(-1);
+                } else if (e.key === "Enter") {
+                  // Open the row that has focus, not whatever was selected before.
+                  const id = (e.target as HTMLElement).id.replace("project-row-", "");
+                  const q = rows.find((r) => r.id === id);
+                  if (q) {
+                    e.preventDefault();
+                    open(q);
+                  }
+                }
+              }}
+            >
+              {rows.map((q) => {
+                const g = groupKey ? groupKey(q) : null;
+                const header = g !== null && g !== lastGroup;
+                lastGroup = g;
+                const st = stageMeta(q.status);
+                const flag = rowFlag(q);
+                const isSel = selected?.id === q.id;
+                const totals = g ? groupTotals.get(g) : undefined;
+                return (
+                  <li key={q.id}>
+                    {header && (
+                      <div className="flex items-baseline justify-between gap-3 px-4 py-2 bg-bg-elevated border-b border-rule">
+                        <span className="text-[13px] font-semibold text-ink-strong truncate">{g}</span>
+                        <span className="text-[12px] text-ink-muted tabnum shrink-0">
+                          {totals?.count} {totals?.count === 1 ? "project" : "projects"} · {usd(totals?.total ?? 0)}
+                        </span>
+                      </div>
+                    )}
+                    <div className={`group relative flex items-stretch ${isSel ? "lg:bg-emerald-soft" : "hover:bg-bg-elevated/60"}`}>
+                      <button
+                        id={`project-row-${q.id}`}
+                        type="button"
+                        aria-current={isSel ? "true" : undefined}
+                        // One tab stop for the whole list; ↑ ↓ move inside it.
+                        tabIndex={isSel ? 0 : -1}
+                        onFocus={() => isWide() && setSelectedId(q.id)}
+                        onClick={() => (isWide() ? setSelectedId(q.id) : open(q))}
+                        onDoubleClick={() => open(q)}
+                        className="flex-1 min-w-0 text-left px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald/60"
+                      >
+                        <span className="flex items-baseline justify-between gap-4">
+                          <span className="min-w-0 truncate text-[14px] font-medium text-ink-strong">{q.projectName}</span>
+                          <span className="shrink-0 text-[14px] font-semibold text-ink-strong tabnum">
+                            {q.totalCost > 0 ? usdShort(q.totalCost) : <span className="text-ink-muted font-normal">—</span>}
+                          </span>
+                        </span>
+                        <span className="mt-1 flex items-center justify-between gap-3">
+                          <span className="min-w-0 truncate text-[12.5px] text-ink-muted">
+                            {q.client}
+                            {q.company && q.company !== "—" && q.company !== q.client && <span className="text-ink-muted"> · {q.company}</span>}
+                            {q.autonumber && <span className="tabnum"> · #{q.autonumber}</span>}
+                          </span>
+                          <span className="shrink-0 flex items-center gap-2">
+                            {flag && (
+                              <span className={`text-[12px] font-medium tabnum ${flag.tone === "red" ? "text-red" : "text-amber"}`}>
+                                {flag.text}
+                              </span>
+                            )}
+                            <span className={`px-2 py-0.5 rounded text-[11.5px] font-medium whitespace-nowrap ${st.tone}`}>{st.label}</span>
+                          </span>
+                        </span>
+                      </button>
+                      <Link
+                        href={`/pipeline/${q.id}`}
+                        tabIndex={-1}
+                        aria-label={`Open ${q.projectName}`}
+                        className={`hidden lg:grid place-items-center w-10 shrink-0 text-ink-muted hover:text-emerald focus-visible:outline-none focus-visible:text-emerald ${
+                          isSel ? "" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                        }`}
+                      >
+                        <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
 
-      <QuoteSheet
-        quote={selected}
-        people={people}
-        sprints={sprints}
-        canEdit={canEdit}
-        onClose={() => setSelected(null)}
-        onFilterByClient={(client) => {
-          setFilter({ ...EMPTY_FILTER, client });
-          setSelected(null);
-        }}
-      />
+        <aside
+          aria-label="Project preview"
+          className="hidden lg:block sticky top-14 bg-surface border border-rule rounded-lg max-h-[calc(100vh-4.5rem)] overflow-y-auto"
+        >
+          <ProjectPreview
+            quote={selected}
+            canEdit={canEdit}
+            onStageChange={(id, status) => setStageOverrides((m) => ({ ...m, [id]: status }))}
+          />
+        </aside>
+      </div>
     </>
+  );
+}
+
+function SummaryLink({ children, onClick, active }: { children: React.ReactNode; onClick: () => void; active: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded hover:text-ink-strong underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald/60 ${
+        active ? "text-ink-strong underline" : ""
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block min-w-0">
+      <span className="block mb-1 text-[12px] text-ink-muted">{label}</span>
+      {children}
+    </label>
   );
 }

@@ -19,10 +19,13 @@ export function DealStageChip({
   quoteId,
   initialStatus,
   canEdit,
+  onChange,
 }: {
   quoteId: string;
   initialStatus: string | null;
   canEdit: boolean;
+  /** Called after the stage saved, so lists can update without a reload. */
+  onChange?: (status: string) => void;
 }) {
   const [status, setStatus] = useState<string | null>(initialStatus);
   const [pending, startTransition] = useTransition();
@@ -37,6 +40,8 @@ export function DealStageChip({
       if ("error" in res) {
         setErr(res.error);
         setStatus(prev);
+      } else {
+        onChange?.(next);
       }
     });
   }

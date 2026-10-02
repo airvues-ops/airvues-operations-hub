@@ -76,7 +76,7 @@ export default async function QuoteDetailPage({ params, searchParams }: Params) 
 
       <header className="mt-3 mb-4 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
-          <h1 className="text-[24px] font-semibold text-ink-strong leading-tight tracking-[-0.01em]">
+          <h1 className="text-[20px] font-semibold text-ink-strong leading-tight tracking-tight">
             {quote.projectName}
           </h1>
           <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-muted">
