@@ -147,18 +147,17 @@ export function QuoteSheet({ quote, people, sprints, canEdit, onClose, onFilterB
           >
             All from {quote.client.split(" ")[0]}
           </button>
+          <ArchiveQuoteControl
+            quoteId={quote.id}
+            projectName={quote.projectName ?? quote.client}
+            onArchived={onClose}
+          />
         </div>
 
         {/* Editable body */}
         <DrawerErrorBoundary airtableUrl={quote.airtableUrl} onClose={onClose} label="This quote">
           <QuoteSheetEditor quoteId={quote.id} people={people} sprints={sprints} canEdit={canEdit} />
         </DrawerErrorBoundary>
-
-        <ArchiveQuoteControl
-          quoteId={quote.id}
-          projectName={quote.projectName ?? quote.client}
-          onArchived={onClose}
-        />
 
       </aside>
     </>,

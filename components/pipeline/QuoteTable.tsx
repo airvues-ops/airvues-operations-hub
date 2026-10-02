@@ -4,6 +4,7 @@ import { Fragment, useMemo } from "react";
 import { PipelineQuote } from "@/lib/pipeline";
 import { deadlineRiskClass, deadlineRiskLabel } from "@/lib/deadline";
 import { Sort, SortKey } from "./types";
+import { ArchiveQuoteControl } from "./ArchiveQuoteControl";
 
 type Props = {
   rows: PipelineQuote[];
@@ -179,12 +180,12 @@ export function QuoteTable({ rows, sort, setSort, onRowClick, selectedId, groupK
                   {sort.key === "uninvoiced" && <span className="text-[8px] text-emerald">{sort.dir === "asc" ? "▲" : "▼"}</span>}
                 </span>
               </th>
-
+              <th className="px-3 py-2.5"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody className="row-zebra">
             {rows.length === 0 ? (
-              <tr><td colSpan={14} className="px-3 py-8 text-center text-[13px] text-ink-muted">No quotes match the current filters.</td></tr>
+              <tr><td colSpan={15} className="px-3 py-8 text-center text-[13px] text-ink-muted">No quotes match the current filters.</td></tr>
             ) : (
               rows.map((q, i) => {
                 const days = daysSince(q.preparedDate);
@@ -241,13 +242,22 @@ export function QuoteTable({ rows, sort, setSort, onRowClick, selectedId, groupK
                     <td className={`px-3 py-2.5 text-right text-[13px] font-mono tabnum ${q.uninvoiced > 0 ? "text-amber font-semibold" : "text-ink-faint"}`} title={q.uninvoiced > 0 ? "Committed but not yet invoiced" : "Fully invoiced"}>
                       {q.uninvoiced > 0 ? fmtCurrency(q.uninvoiced) : "—"}
                     </td>
+                    {/* Clicks here must not open the drawer. */}
+                    <td className="px-3 py-1.5 text-right" onClick={(e) => e.stopPropagation()}>
+                      <ArchiveQuoteControl
+                        quoteId={q.id}
+                        projectName={q.projectName ?? q.client}
+                        label="Archive"
+                        className="justify-end"
+                      />
+                    </td>
                   </tr>
                 );
                 if (!opensGroup) return row;
                 return (
                   <Fragment key={`g-${q.id}`}>
                     <tr className="border-b border-rule">
-                      <td colSpan={14} className="!bg-bg-elevated px-3 py-2">
+                      <td colSpan={15} className="!bg-bg-elevated px-3 py-2">
                         <div className="flex items-center gap-3 flex-wrap">
                           <span className="text-[13px] font-semibold text-ink-strong">{gk}</span>
                           <span className="text-[11px] text-ink-muted font-mono tabnum">

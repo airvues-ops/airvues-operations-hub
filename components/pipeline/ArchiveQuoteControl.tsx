@@ -8,38 +8,38 @@ import { setQuoteArchived } from "@/lib/mutations/quote";
 /**
  * Projects have no hard delete — they carry invoices, payments and a project
  * log. Archiving takes the project off the board and leaves all of it addressable.
+ * Mounted in the project drawer's action bar and on each Projects table row.
  */
 export function ArchiveQuoteControl({
   quoteId,
   projectName,
   onArchived,
+  label = "Archive project",
+  className,
 }: {
   quoteId: string;
   projectName: string;
   onArchived?: () => void;
+  label?: string;
+  className?: string;
 }) {
   const router = useRouter();
   const canDelete = useCanDelete();
   if (!canDelete) return null;
 
   return (
-    <div className="px-5 py-4 border-t border-rule flex items-center justify-between gap-3 flex-wrap">
-      <p className="text-[11px] text-ink-faint max-w-[46ch]">
-        Archiving hides this project from the board. Stories, invoices and the project log stay
-        exactly where they are.
-      </p>
-      <DeleteControl
-        variant="archive"
-        label="Archive project"
-        question={`Archive "${projectName}"?`}
-        confirmLabel="Yes, archive"
-        consequence="It leaves the Projects board. Restore by unchecking Archived on the quote in Airtable."
-        onConfirm={() => setQuoteArchived(quoteId, true)}
-        onDone={() => {
-          onArchived?.();
-          router.refresh();
-        }}
-      />
-    </div>
+    <DeleteControl
+      variant="archive"
+      label={label}
+      className={className}
+      question={`Archive "${projectName}"?`}
+      confirmLabel="Yes, archive"
+      consequence="Leaves the Projects board; stories and invoices stay. Restore from the Archive page."
+      onConfirm={() => setQuoteArchived(quoteId, true)}
+      onDone={() => {
+        onArchived?.();
+        router.refresh();
+      }}
+    />
   );
 }
