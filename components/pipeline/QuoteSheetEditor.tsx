@@ -34,7 +34,9 @@ import { PersonPicker } from "./PersonPicker";
 import { MultiPersonPicker } from "./MultiPersonPicker";
 import { QuoteStoriesTable } from "./QuoteStoriesTable";
 import { NewQuoteStoryModal } from "./NewQuoteStoryModal";
-import { Section as SharedSection } from "@/components/ui/Section";
+import { ChevronDown, Eye, Lock, Plus } from "lucide-react";
+import { StageSection, type StageState } from "@/components/projects/StageSection";
+import { ProjectOverview, type OverviewMoney } from "@/components/projects/ProjectOverview";
 
 type SprintOption = { id: string; number: number | null; status: string | null };
 
@@ -44,6 +46,10 @@ type Props = {
   people: PersonOption[];
   sprints: SprintOption[];
   canEdit: boolean;
+  /** Page mode: shows the lifecycle overview and orders sections by stage. */
+  overview?: OverviewMoney;
+  /** Page mode: sections rendered after change orders (invoices, activity). */
+  afterScope?: React.ReactNode;
 };
 
 const inputCls =
@@ -62,24 +68,22 @@ function asStr(v: unknown): string {
 // so the labeling is consistent with the AI proposal section.)
 
 
+// Who sees a field. Shown as a small icon rather than a badge on every label:
+// the distinction matters, but it isn't what people are reading for.
 function InternalChip() {
   return (
-    <span
-      className="inline-flex items-center gap-1 text-[9px] font-medium uppercase tracking-wider text-amber bg-amber/10 border border-amber/30 px-1.5 py-0.5 rounded"
-      title="Only the Airvues team sees this."
-    >
-      🔒 Internal only
+    <span className="inline-flex text-ink-faint" title="Internal — only the Airvues team sees this">
+      <Lock aria-hidden="true" className="h-3 w-3" />
+      <span className="sr-only">Internal only</span>
     </span>
   );
 }
 
 function PortalChip() {
   return (
-    <span
-      className="inline-flex items-center gap-1 text-[9px] font-medium uppercase tracking-wider text-sky bg-sky/10 border border-sky/30 px-1.5 py-0.5 rounded"
-      title="Visible on the client-facing portal."
-    >
-      🖥️ Portal visible
+    <span className="inline-flex text-sky/80" title="Shown to the client on the web quote and portal">
+      <Eye aria-hidden="true" className="h-3.5 w-3.5" />
+      <span className="sr-only">Visible to the client</span>
     </span>
   );
 }
@@ -92,7 +96,7 @@ function SaveIndicator({ state }: { state: "idle" | "saving" | "saved" | "error"
     error: { text: "Save failed", cls: "text-red" },
   } as const;
   const { text, cls } = map[state];
-  return <span className={`text-[10px] font-mono ${cls}`}>{text}</span>;
+  return <span className={`text-[11px] ${cls}`}>{text}</span>;
 }
 
 function FieldRow({
@@ -120,15 +124,13 @@ function FieldRow({
   return (
     <div className={wrapCls}>
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">
-            {label}
-          </label>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <label className="text-[12px] font-medium text-ink-muted">{label}</label>
           {chip}
         </div>
         <SaveIndicator state={state ?? "idle"} />
       </div>
-      {hint && <div className="text-[11px] text-ink-faint mb-1.5">{hint}</div>}
+      {hint && <div className="text-[12px] text-ink-faint mb-1.5">{hint}</div>}
       {children}
     </div>
   );
@@ -136,7 +138,7 @@ function FieldRow({
 
 /** Obvious-affordance collapsible used for long-text fields inside a section.
  *  Mirrors the LeadSheet CollapsibleNotes pattern (chevron-left + emerald accent
- *  + "Click to expand/collapse" microcopy). */
+ *  + character count). */
 function CollapsibleField({
   title,
   open,
@@ -158,17 +160,16 @@ function CollapsibleField({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="w-full flex items-stretch border-l-2 border-emerald/60 text-left hover:bg-bg-elevated transition-colors"
+        className="w-full flex items-stretch text-left hover:bg-bg-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald/60"
       >
         <span className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2">
-          <span className="text-ink-muted text-[11px] font-mono w-3 inline-block">{open ? "▾" : "▸"}</span>
+          <ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 text-ink-muted transition-transform ${open ? "" : "-rotate-90"}`} />
           <span className="text-[12px] font-medium text-ink-strong">{title}</span>
           {charCount > 0 ? (
-            <span className="text-[10px] font-mono text-ink-faint">{charCount.toLocaleString()} chars</span>
+            <span className="text-[12px] text-ink-muted tabnum">{charCount.toLocaleString()} characters</span>
           ) : (
             emptyHint && <span className="text-[10px] text-ink-faint italic">{emptyHint}</span>
           )}
-          <span className="ml-auto text-[10px] text-ink-faint">{open ? "Click to collapse" : "Click to expand"}</span>
         </span>
       </button>
       {open && <div className="px-3 py-2 border-t border-rule">{children}</div>}
@@ -574,45 +575,6 @@ function AiField({
   );
 }
 
-// ---------- Section wrapper ----------
-// Delegates to the shared, tone-aware Section primitive used across the app
-// so the drawer reads as multiple distinctly-colored zones instead of one
-// monolithic green block. `chip` is rendered as the right-side meta slot.
-
-type SectionTone = "emerald" | "sky" | "violet" | "amber" | "red" | "neutral";
-
-function Section({
-  title,
-  chip,
-  tone = "neutral",
-  collapsible = false,
-  defaultOpen = true,
-  storageKey,
-  children,
-}: {
-  title: string;
-  chip?: React.ReactNode;
-  tone?: SectionTone;
-  collapsible?: boolean;
-  defaultOpen?: boolean;
-  storageKey?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <SharedSection
-      title={title}
-      tone={tone}
-      meta={chip}
-      collapsible={collapsible}
-      defaultOpen={defaultOpen}
-      storageKey={storageKey}
-      bodyPadding={false}
-    >
-      {children}
-    </SharedSection>
-  );
-}
-
 // ---------- Create AI Proposal button row ----------
 
 function formatElapsed(ms: number): string {
@@ -814,7 +776,7 @@ function CreateAiChangeOrderRow({
 // ---------- Main editor ----------
 
 
-export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }: Props) {
+export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit, overview, afterScope }: Props) {
   const router = useRouter();
   const [quote, setQuote] = useState<QuoteDetail | null>(initial ?? null);
   const [loading, setLoading] = useState(!initial);
@@ -1002,11 +964,81 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
     return "idle";
   };
 
-  return (
-    <>
-      {/* SECTION 1: Project details (client-visible header) */}
-      <Section title="Project details" chip={<PortalChip />} tone="emerald" collapsible storageKey={`qs:${quoteId}:details`} defaultOpen>
-        <div className="px-5 py-3 grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-1">
+  const isRetainer = quote.proposalType === "Retainer Agreement";
+  const pageMode = !!overview;
+  const journeyIdx = (PROJECT_STATUS_CHOICES as readonly string[]).indexOf(quote.projectStatus ?? "");
+  const storiesDone = originalStories.filter((st) => st.status === "Completed").length;
+  const hasClientInput =
+    asStr(quote.customProblemStatement).trim().length > 0 || quote.documents.length > 0;
+  const aiReady =
+    asStr(quote.recommendedApproach).trim().length > 0 &&
+    asStr(quote.recommendedApproachSummary).trim().length > 0 &&
+    asStr(quote.projectOverview).trim().length > 0 &&
+    asStr(quote.problemStatementSolution).trim().length > 0 &&
+    asStr(quote.estimateCostRange).trim().length > 0 &&
+    quote.stories.length > 0;
+
+  // Where each section sits in the lifecycle (page mode only).
+  const proposalDone = journeyIdx >= 2; // signed
+  const proposalState: StageState | undefined = pageMode ? (proposalDone ? "done" : "current") : undefined;
+  const scopeState: StageState | undefined = !pageMode
+    ? undefined
+    : journeyIdx >= PROJECT_STATUS_CHOICES.length - 1
+      ? "done"
+      : journeyIdx >= 2
+        ? "current"
+        : "upcoming";
+
+  const fmtUsd = (n: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+  const personName = (id: string | null) => people.find((p) => p.id === id)?.name ?? null;
+  const k = (name: string) => `pj:${quoteId}:${name}`;
+
+  const proposalSummary = aiReady
+    ? "AI proposal ready"
+    : isAgentRunning
+      ? "Generating proposal…"
+      : hasClientInput
+        ? "Client input added, proposal not generated yet"
+        : "Waiting on client input";
+  const scopeSummary =
+    originalStories.length === 0
+      ? "No stories yet"
+      : isRetainer
+        ? `${originalStories.length} ${originalStories.length === 1 ? "story" : "stories"} · ${quote.originalTotalHours ?? 0}h`
+        : `${storiesDone} of ${originalStories.length} done · ${quote.originalTotalHours ?? 0}h · ${fmtUsd(quote.originalTotalCost)}`;
+  const coSummary =
+    changeOrderStories.length === 0
+      ? "None"
+      : `${changeOrderStories.length} ${changeOrderStories.length === 1 ? "story" : "stories"} · ${fmtUsd(quote.changeOrderTotalCost)}`;
+  const detailsSummary = [
+    personName(quote.preparedById) ? `Prepared by ${personName(quote.preparedById)}` : null,
+    quote.proposalType,
+    personName(quote.epicOwnerId) ? `Lead engineer ${personName(quote.epicOwnerId)}` : "No lead engineer",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const addButton = (label: string, onClick: () => void) =>
+    canEdit ? (
+      <button
+        type="button"
+        onClick={onClick}
+        className="inline-flex items-center gap-1 px-3 py-1.5 text-[12px] font-semibold bg-emerald text-bg rounded-md hover:bg-emerald/85 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+      >
+        <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+        {label}
+      </button>
+    ) : null;
+
+  const detailsSection = (
+    <StageSection
+      title="Project details"
+      summary={detailsSummary}
+      defaultOpen={!pageMode}
+      storageKey={k("details")}
+    >
+        <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
         <FieldRow label="Project name" chip={<PortalChip />} state={stateFor("projectName")} variant="cell" className="md:col-span-2">
 
           <TextField
@@ -1036,14 +1068,14 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
             onChange={(e) =>
               void patchAndRefresh("preparedDate", { preparedDate: e.target.value || null })
             }
-            className={`${inputCls} font-mono w-auto`}
+            className={`${inputCls} tabnum w-auto`}
           />
         </FieldRow>
 
         {quote.proposalType !== "Retainer Agreement" && (
         <FieldRow
           label="Delivery due date"
-          hint="Client Delivery Due Date — drives the deadline badge on the Projects page."
+          hint="Drives the deadline badge on Projects."
           chip={<PortalChip />}
           state={stateFor("deliveryDueDate")}
           variant="cell"
@@ -1055,7 +1087,7 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
             onChange={(e) =>
               void patchAndRefresh("deliveryDueDate", { deliveryDueDate: e.target.value || null })
             }
-            className={`${inputCls} font-mono w-auto`}
+            className={`${inputCls} tabnum w-auto`}
           />
         </FieldRow>
         )}
@@ -1070,9 +1102,10 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
           />
         </FieldRow>
 
+        {!pageMode && (
         <FieldRow
-          label="Proposal Status"
-          hint="Client-visible delivery milestone — drives the 7-stage progress bar on the web quote. (Airtable field: Project Status)"
+          label="Client journey stage"
+          hint="Drives the progress bar on the client's web quote."
           chip={<PortalChip />}
           state={stateFor("projectStatus")}
           variant="cell"
@@ -1094,6 +1127,8 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
           </select>
         </FieldRow>
 
+        )}
+
         <FieldRow label="Proposal type" chip={<PortalChip />} state={stateFor("proposalType")} variant="cell">
           <select
             value={quote.proposalType ?? ""}
@@ -1113,8 +1148,8 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
         </FieldRow>
 
         <FieldRow
-          label="Epic Owner"
-          hint="Engineer responsible for delivering this epic."
+          label="Lead engineer"
+          hint="Engineer responsible for delivery."
           chip={<InternalChip />}
           state={stateFor("epicOwnerId")}
           variant="cell"
@@ -1131,7 +1166,7 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
         {quote.proposalType !== "Retainer Agreement" && (
         <FieldRow
           label="Blueprint engagement"
-          hint="Tick when this quote is a Blueprint. Grants the salesperson on 'Prepared by' a +5% commission bonus in their personal scorecard."
+          hint="Gives the person in Prepared by a +5% commission bonus."
           chip={<InternalChip />}
           state={stateFor("blueprint")}
           variant="cell"
@@ -1151,21 +1186,43 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
         </FieldRow>
         )}
         </div>
-      </Section>
+    </StageSection>
+  );
 
-      {/* SECTION 2: Client input — collapsible, internal-only. Hidden for retainers. */}
-      {quote.proposalType !== "Retainer Agreement" && (
-      <Section
-        title="Client input for proposal"
-        chip={<InternalChip />}
-        tone="sky"
-        collapsible
-        defaultOpen={false}
-        storageKey={`quote:${quoteId}:clientInput`}
-      >
+  return (
+    <>
+      {pageMode && overview && (
+        <ProjectOverview
+          journey={quote.projectStatus}
+          onSetJourney={(step) => void patchAndRefresh("projectStatus", { projectStatus: step })}
+          saving={savingField === "projectStatus"}
+          canEdit={canEdit}
+          totalCost={quote.originalTotalCost + quote.changeOrderTotalCost}
+          money={overview}
+          storiesDone={storiesDone}
+          storiesTotal={originalStories.length}
+          hours={quote.originalTotalHours}
+          deliveryDueDate={quote.deliveryDueDate}
+        />
+      )}
+
+      {!pageMode && detailsSection}
+
+      {!isRetainer && (
+        <StageSection
+          id="proposal"
+          title="Proposal"
+          summary={proposalSummary}
+          state={proposalState}
+          defaultOpen={!pageMode || !proposalDone}
+          storageKey={k("proposal")}
+        >
+          <div className="px-4 pt-3 pb-1">
+            <h3 className="text-[13px] font-semibold text-ink">Client input</h3>
+          </div>
         <FieldRow
-          label="Custom Problem Statement and Solution Summary"
-          hint="Paste all information from the client for proposal (meeting transcripts, emails, requirements, etc.)"
+          label="Problem statement and context"
+          hint="Everything the client gave you: meeting transcripts, emails, requirements."
           chip={<InternalChip />}
           state={stateFor("customProblemStatement")}
         >
@@ -1182,8 +1239,8 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
         </FieldRow>
 
         <FieldRow
-          label="Documents needed for Proposal"
-          hint="Attach any documents from the client (requirements, screenshots, etc.)"
+          label="Client documents"
+          hint="Requirements, screenshots, anything the AI should read."
           chip={<InternalChip />}
         >
           <QuoteAttachments
@@ -1215,17 +1272,14 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
           error={aiError}
           onClick={handleTriggerAi}
         />
-      </Section>
-      )}
 
-      {/* SECTION 3: AI proposal output — client-visible. Hidden for retainers. */}
-      {quote.proposalType !== "Retainer Agreement" && (
-      <Section title="AI-generated proposal content" chip={<PortalChip />} tone="violet" collapsible storageKey={`qs:${quoteId}:ai`} defaultOpen={false}>
-        <div className="px-5 pb-3 text-[11px] text-ink-faint">
-          Generated by the AI proposal agent. Edit only to override.
-        </div>
+          <div className="px-4 pt-4 pb-1 border-t border-rule flex items-center gap-2">
+            <h3 className="text-[13px] font-semibold text-ink">Generated proposal</h3>
+            <PortalChip />
+            <span className="text-[12px] text-ink-muted">Written by the AI agent. Edit only to override it.</span>
+          </div>
 
-        <FieldRow label="Recommended Approach" chip={<PortalChip />} state={stateFor("recommendedApproach")}>
+        <FieldRow label="Recommended approach" chip={<PortalChip />} state={stateFor("recommendedApproach")}>
           <AiField
             value={quote.recommendedApproach}
             canEdit={canEdit}
@@ -1235,7 +1289,7 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
         </FieldRow>
 
         <FieldRow
-          label="Recommended Approach Summary"
+          label="Approach summary"
           chip={<PortalChip />}
           state={stateFor("recommendedApproachSummary")}
         >
@@ -1249,7 +1303,7 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
           />
         </FieldRow>
 
-        <FieldRow label="Project Overview" chip={<PortalChip />} state={stateFor("projectOverview")}>
+        <FieldRow label="Project overview" chip={<PortalChip />} state={stateFor("projectOverview")}>
           <AiField
             value={quote.projectOverview}
             canEdit={canEdit}
@@ -1259,7 +1313,7 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
         </FieldRow>
 
         <FieldRow
-          label="Problem Statement & Our Solution"
+          label="Problem and our solution"
           chip={<PortalChip />}
           state={stateFor("problemStatementSolution")}
         >
@@ -1273,17 +1327,24 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
           />
         </FieldRow>
 
-        <FieldRow label="Total Cost Estimate" chip={<PortalChip />} state="idle">
+        <FieldRow label="Cost estimate" chip={<PortalChip />} state="idle">
           <div className="px-2 py-1.5 text-[13px] text-ink whitespace-pre-wrap">
             {asStr(quote.estimateCostRange).trim() || "—"}
           </div>
         </FieldRow>
-      </Section>
+        </StageSection>
       )}
 
-      {/* SECTION 4: Quote calculator — original scope stories */}
-      <Section title={quote.proposalType === "Retainer Agreement" ? "Retainer delivery — monthly stories" : "Quote calculator"} tone="amber" collapsible storageKey={`qs:${quoteId}:calc`} defaultOpen>
-        <div className="px-5 pb-4">
+      <StageSection
+        id="scope"
+        title={isRetainer ? "Monthly stories" : "Scope & delivery"}
+        summary={scopeSummary}
+        state={scopeState}
+        defaultOpen
+        storageKey={k("scope")}
+        actions={isRetainer ? undefined : addButton("Add story", () => setShowAddStory(true))}
+      >
+        <div>
           <QuoteStoriesTable
             stories={originalStories}
             totalCost={quote.originalTotalCost}
@@ -1291,32 +1352,39 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
             canEdit={canEdit}
             onAddClick={() => setShowAddStory(true)}
             onRowClick={openStory}
-            title="Original scope total (rolls up from stories)"
+            title={isRetainer ? "Hours this period" : "Original scope total"}
             addLabel="+ Add story"
             quoteId={quote.id}
             people={people}
             onReordered={(next) => setQuote(next)}
             onChanged={(next) => setQuote(next)}
             groupByMonth={quote.proposalType === "Retainer Agreement"}
+            bare
           />
 
           {storyLoading && (
-            <div className="mt-2 text-[11px] text-ink-faint">Loading story…</div>
+            <div className="px-4 py-2 text-[12px] text-ink-faint">Loading story…</div>
           )}
         </div>
-      </Section>
+      </StageSection>
 
-      {/* SECTION 5: Change orders */}
-      {quote.proposalType !== "Retainer Agreement" && (
-      <Section title="Change orders" tone="red" collapsible storageKey={`qs:${quoteId}:co`} defaultOpen={false}>
+      {!isRetainer && (
+        <StageSection
+          id="change-orders"
+          title="Change orders"
+          summary={coSummary}
+          defaultOpen={changeOrderStories.length > 0}
+          storageKey={k("change-orders")}
+          actions={addButton("Add change order story", () => setShowAddChangeOrder(true))}
+        >
         <FieldRow
-          label="Change Order Input Details"
-          hint="Raw context for the AI agent — paste meeting notes, scope deltas, client requests. The agent uses this to draft the summary + stories below."
+          label="Change order context"
+          hint="Meeting notes, scope changes, client requests. The AI drafts the summary and stories from this."
           state={stateFor("changeOrderInputDetails")}
         >
           <CollapsibleFieldWrapper
             storageKey={`quote:${quote.id}:co-input-open`}
-            title="Change Order Input Details"
+            title="Change order context"
             initialContent={quote.changeOrderInputDetails}
             emptyHint="Empty — click to add context"
           >
@@ -1346,7 +1414,7 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
 
         <FieldRow
           label="Change order summary"
-          hint="Notes covering all change orders on this quote (scope, rationale, timing). Generated by the AI agent from the input above."
+          hint="Scope, reason and timing for all change orders. Drafted by the AI from the context above."
           chip={<PortalChip />}
           state={stateFor("changeOrderDetails")}
         >
@@ -1362,14 +1430,14 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
           />
         </FieldRow>
 
-        <FieldRow label="Change Order Estimate Cost" chip={<PortalChip />} state="idle">
+        <FieldRow label="Change order estimate" chip={<PortalChip />} state="idle">
           <div className="px-2 py-1.5 text-[13px] text-ink whitespace-pre-wrap">
             {asStr(quote.changeOrderEstimateCost).trim() || "—"}
           </div>
         </FieldRow>
 
 
-        <div className="px-5 pb-4">
+        <div>
           <QuoteStoriesTable
             stories={changeOrderStories}
             totalCost={quote.changeOrderTotalCost}
@@ -1377,7 +1445,7 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
             canEdit={canEdit}
             onAddClick={() => setShowAddChangeOrder(true)}
             onRowClick={openStory}
-            title="Change order total (rolls up from stories)"
+            title="Change order total"
             addLabel="+ Add change order story"
             emptyLabel={
               canEdit
@@ -1388,32 +1456,31 @@ export function QuoteSheetEditor({ quoteId, initial, people, sprints, canEdit }:
             people={people}
             onReordered={(next) => setQuote(next)}
             onChanged={(next) => setQuote(next)}
+            bare
           />
 
 
           {/* Grand total */}
-          <div className="mt-3 flex items-center justify-between gap-3 px-3 py-3 border border-rule rounded-md bg-bg-elevated">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">
-              Grand total (original + change orders)
-            </div>
+          <div className="m-4 flex items-center justify-between gap-3 px-3 py-3 border border-rule rounded-md bg-bg-elevated">
+            <div className="text-[12px] text-ink-muted">Total with change orders</div>
             <div className="flex items-baseline gap-3">
               <div className="text-[20px] font-semibold text-ink-strong tabnum leading-none">
-                {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(
-                  quote.originalTotalCost + quote.changeOrderTotalCost,
-                )}
+                {fmtUsd(quote.originalTotalCost + quote.changeOrderTotalCost)}
               </div>
               {(quote.originalTotalHours != null || quote.changeOrderTotalHours != null) && (
-                <div className="text-[11px] text-ink-muted font-mono tabnum">
+                <div className="text-[12px] text-ink-muted tabnum">
                   {((quote.originalTotalHours ?? 0) + (quote.changeOrderTotalHours ?? 0))}h
                 </div>
               )}
             </div>
           </div>
         </div>
-      </Section>
+        </StageSection>
       )}
 
+      {afterScope}
 
+      {pageMode && detailsSection}
 
       <NewQuoteStoryModal
         open={showAddStory}

@@ -43,8 +43,8 @@ export function DealStageChip({
 
   if (!canEdit) {
     return (
-      <span className="px-2.5 py-1 bg-bg-elevated border border-rule rounded font-mono text-ink text-[12px]">
-        <span className="text-ink-faint mr-1">Deal:</span>
+      <span className="px-3 py-1.5 bg-bg-elevated border border-rule rounded-md text-ink-strong text-[12.5px]">
+        <span className="text-ink-faint mr-1.5">Deal stage</span>
         {status ?? "—"}
       </span>
     );
@@ -52,22 +52,22 @@ export function DealStageChip({
 
   return (
     <span
-      className="inline-flex items-center bg-bg-elevated border border-rule rounded text-[12px] font-mono"
-      title={err ?? "Click to change Deal Stage"}
+      className="inline-flex items-center bg-bg-elevated border border-rule rounded-md text-[12.5px] focus-within:border-emerald"
+      title={err ?? "Sales pipeline stage — internal, not shown to the client"}
     >
-      <span className="pl-2.5 text-ink-faint">Deal:</span>
+      <span className="pl-3 text-ink-faint">Deal stage</span>
       <select
         value={status ?? ""}
         onChange={(e) => handleChange(e.target.value)}
         disabled={pending}
-        className="bg-transparent text-ink py-1 px-1.5 focus:outline-none cursor-pointer disabled:opacity-50"
+        className="bg-transparent text-ink-strong font-medium py-1.5 pl-1.5 pr-2 focus:outline-none cursor-pointer disabled:opacity-50"
       >
         {!status && <option value="">—</option>}
         {STAGES.map((s) => (
           <option key={s} value={s}>{s}</option>
         ))}
       </select>
-      {err && <span className="pr-2 text-red text-[10px]">⚠</span>}
+      {err && <span role="alert" className="pr-2.5 text-red text-[11px]">Not saved</span>}
     </span>
   );
 }

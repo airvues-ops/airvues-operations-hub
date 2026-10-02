@@ -1,0 +1,550 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T14:55:29+00:00",
+  "title": "Design System: Airvues Ops",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Night Ground",
+        "canonical": "#0B0F17",
+        "tonalRamp": [
+          "oklch(15% 0.018 263.9)",
+          "oklch(26% 0.018 263.9)",
+          "oklch(38% 0.018 263.9)",
+          "oklch(49% 0.018 263.9)",
+          "oklch(61% 0.018 263.9)",
+          "oklch(72% 0.018 263.9)",
+          "oklch(84% 0.018 263.9)",
+          "oklch(95% 0.018 263.9)"
+        ]
+      },
+      "bg-elevated": {
+        "role": "neutral",
+        "displayName": "Raised Night",
+        "canonical": "#131825",
+        "tonalRamp": [
+          "oklch(15% 0.027 267.9)",
+          "oklch(26% 0.027 267.9)",
+          "oklch(38% 0.027 267.9)",
+          "oklch(49% 0.027 267.9)",
+          "oklch(61% 0.027 267.9)",
+          "oklch(72% 0.027 267.9)",
+          "oklch(84% 0.027 267.9)",
+          "oklch(95% 0.027 267.9)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Panel Slate",
+        "canonical": "#161C2A",
+        "tonalRamp": [
+          "oklch(15% 0.029 266.3)",
+          "oklch(26% 0.029 266.3)",
+          "oklch(38% 0.029 266.3)",
+          "oklch(49% 0.029 266.3)",
+          "oklch(61% 0.029 266.3)",
+          "oklch(72% 0.029 266.3)",
+          "oklch(84% 0.029 266.3)",
+          "oklch(95% 0.029 266.3)"
+        ]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Panel Slate 2",
+        "canonical": "#1A2030",
+        "tonalRamp": [
+          "oklch(15% 0.032 268.2)",
+          "oklch(26% 0.032 268.2)",
+          "oklch(38% 0.032 268.2)",
+          "oklch(49% 0.032 268.2)",
+          "oklch(61% 0.032 268.2)",
+          "oklch(72% 0.032 268.2)",
+          "oklch(84% 0.032 268.2)",
+          "oklch(95% 0.032 268.2)"
+        ]
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "Sidebar Night",
+        "canonical": "#0D121C",
+        "tonalRamp": [
+          "oklch(15% 0.022 263.8)",
+          "oklch(26% 0.022 263.8)",
+          "oklch(38% 0.022 263.8)",
+          "oklch(49% 0.022 263.8)",
+          "oklch(61% 0.022 263.8)",
+          "oklch(72% 0.022 263.8)",
+          "oklch(84% 0.022 263.8)",
+          "oklch(95% 0.022 263.8)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#E8ECF2",
+        "tonalRamp": [
+          "oklch(15% 0.009 258.3)",
+          "oklch(26% 0.009 258.3)",
+          "oklch(38% 0.009 258.3)",
+          "oklch(49% 0.009 258.3)",
+          "oklch(61% 0.009 258.3)",
+          "oklch(72% 0.009 258.3)",
+          "oklch(84% 0.009 258.3)",
+          "oklch(95% 0.009 258.3)"
+        ]
+      },
+      "ink-strong": {
+        "role": "neutral",
+        "displayName": "Ink Strong",
+        "canonical": "#F8FAFC",
+        "tonalRamp": [
+          "oklch(15% 0.003 247.9)",
+          "oklch(26% 0.003 247.9)",
+          "oklch(38% 0.003 247.9)",
+          "oklch(49% 0.003 247.9)",
+          "oklch(61% 0.003 247.9)",
+          "oklch(72% 0.003 247.9)",
+          "oklch(84% 0.003 247.9)",
+          "oklch(95% 0.003 247.9)"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Ink Muted",
+        "canonical": "#A3ADBD",
+        "tonalRamp": [
+          "oklch(15% 0.026 259.8)",
+          "oklch(26% 0.026 259.8)",
+          "oklch(38% 0.026 259.8)",
+          "oklch(49% 0.026 259.8)",
+          "oklch(61% 0.026 259.8)",
+          "oklch(72% 0.026 259.8)",
+          "oklch(84% 0.026 259.8)",
+          "oklch(95% 0.026 259.8)"
+        ]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Ink Faint",
+        "canonical": "#6B7585",
+        "tonalRamp": [
+          "oklch(15% 0.028 259.8)",
+          "oklch(26% 0.028 259.8)",
+          "oklch(38% 0.028 259.8)",
+          "oklch(49% 0.028 259.8)",
+          "oklch(61% 0.028 259.8)",
+          "oklch(72% 0.028 259.8)",
+          "oklch(84% 0.028 259.8)",
+          "oklch(95% 0.028 259.8)"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#26303F",
+        "tonalRamp": [
+          "oklch(15% 0.031 258.3)",
+          "oklch(26% 0.031 258.3)",
+          "oklch(38% 0.031 258.3)",
+          "oklch(49% 0.031 258.3)",
+          "oklch(61% 0.031 258.3)",
+          "oklch(72% 0.031 258.3)",
+          "oklch(84% 0.031 258.3)",
+          "oklch(95% 0.031 258.3)"
+        ]
+      },
+      "rule-soft": {
+        "role": "neutral",
+        "displayName": "Rule Soft",
+        "canonical": "#1A2030",
+        "tonalRamp": [
+          "oklch(15% 0.032 268.2)",
+          "oklch(26% 0.032 268.2)",
+          "oklch(38% 0.032 268.2)",
+          "oklch(49% 0.032 268.2)",
+          "oklch(61% 0.032 268.2)",
+          "oklch(72% 0.032 268.2)",
+          "oklch(84% 0.032 268.2)",
+          "oklch(95% 0.032 268.2)"
+        ]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Rule Strong",
+        "canonical": "#34405A",
+        "tonalRamp": [
+          "oklch(15% 0.048 265.1)",
+          "oklch(26% 0.048 265.1)",
+          "oklch(38% 0.048 265.1)",
+          "oklch(49% 0.048 265.1)",
+          "oklch(61% 0.048 265.1)",
+          "oklch(72% 0.048 265.1)",
+          "oklch(84% 0.048 265.1)",
+          "oklch(95% 0.048 265.1)"
+        ]
+      },
+      "navy": {
+        "role": "tertiary",
+        "displayName": "Brand Navy",
+        "canonical": "#2B4257",
+        "tonalRamp": [
+          "oklch(15% 0.046 246.9)",
+          "oklch(26% 0.046 246.9)",
+          "oklch(38% 0.046 246.9)",
+          "oklch(49% 0.046 246.9)",
+          "oklch(61% 0.046 246.9)",
+          "oklch(72% 0.046 246.9)",
+          "oklch(84% 0.046 246.9)",
+          "oklch(95% 0.046 246.9)"
+        ]
+      },
+      "emerald": {
+        "role": "primary",
+        "displayName": "Signal Emerald",
+        "canonical": "#22D3A8",
+        "tonalRamp": [
+          "oklch(15% 0.147 170.5)",
+          "oklch(26% 0.147 170.5)",
+          "oklch(38% 0.147 170.5)",
+          "oklch(49% 0.147 170.5)",
+          "oklch(61% 0.147 170.5)",
+          "oklch(72% 0.147 170.5)",
+          "oklch(84% 0.147 170.5)",
+          "oklch(95% 0.147 170.5)"
+        ]
+      },
+      "emerald-soft": {
+        "role": "primary",
+        "displayName": "Signal Emerald Soft",
+        "canonical": "rgba(34, 211, 168, 0.10)",
+        "tonalRamp": [
+          "oklch(15% 0.147 170.5)",
+          "oklch(26% 0.147 170.5)",
+          "oklch(38% 0.147 170.5)",
+          "oklch(49% 0.147 170.5)",
+          "oklch(61% 0.147 170.5)",
+          "oklch(72% 0.147 170.5)",
+          "oklch(84% 0.147 170.5)",
+          "oklch(95% 0.147 170.5)"
+        ]
+      },
+      "amber": {
+        "role": "secondary",
+        "displayName": "Owed Amber",
+        "canonical": "#FBBF24",
+        "tonalRamp": [
+          "oklch(15% 0.164 84.4)",
+          "oklch(26% 0.164 84.4)",
+          "oklch(38% 0.164 84.4)",
+          "oklch(49% 0.164 84.4)",
+          "oklch(61% 0.164 84.4)",
+          "oklch(72% 0.164 84.4)",
+          "oklch(84% 0.164 84.4)",
+          "oklch(95% 0.164 84.4)"
+        ]
+      },
+      "amber-soft": {
+        "role": "secondary",
+        "displayName": "Owed Amber Soft",
+        "canonical": "rgba(251, 191, 36, 0.10)",
+        "tonalRamp": [
+          "oklch(15% 0.164 84.4)",
+          "oklch(26% 0.164 84.4)",
+          "oklch(38% 0.164 84.4)",
+          "oklch(49% 0.164 84.4)",
+          "oklch(61% 0.164 84.4)",
+          "oklch(72% 0.164 84.4)",
+          "oklch(84% 0.164 84.4)",
+          "oklch(95% 0.164 84.4)"
+        ]
+      },
+      "red": {
+        "role": "secondary",
+        "displayName": "Late Rose",
+        "canonical": "#FB7185",
+        "tonalRamp": [
+          "oklch(15% 0.169 13.4)",
+          "oklch(26% 0.169 13.4)",
+          "oklch(38% 0.169 13.4)",
+          "oklch(49% 0.169 13.4)",
+          "oklch(61% 0.169 13.4)",
+          "oklch(72% 0.169 13.4)",
+          "oklch(84% 0.169 13.4)",
+          "oklch(95% 0.169 13.4)"
+        ]
+      },
+      "red-soft": {
+        "role": "secondary",
+        "displayName": "Late Rose Soft",
+        "canonical": "rgba(251, 113, 133, 0.10)",
+        "tonalRamp": [
+          "oklch(15% 0.169 13.4)",
+          "oklch(26% 0.169 13.4)",
+          "oklch(38% 0.169 13.4)",
+          "oklch(49% 0.169 13.4)",
+          "oklch(61% 0.169 13.4)",
+          "oklch(72% 0.169 13.4)",
+          "oklch(84% 0.169 13.4)",
+          "oklch(95% 0.169 13.4)"
+        ]
+      },
+      "sky": {
+        "role": "tertiary",
+        "displayName": "Client Sky",
+        "canonical": "#7DD3FC",
+        "tonalRamp": [
+          "oklch(15% 0.101 230.3)",
+          "oklch(26% 0.101 230.3)",
+          "oklch(38% 0.101 230.3)",
+          "oklch(49% 0.101 230.3)",
+          "oklch(61% 0.101 230.3)",
+          "oklch(72% 0.101 230.3)",
+          "oklch(84% 0.101 230.3)",
+          "oklch(95% 0.101 230.3)"
+        ]
+      },
+      "sky-soft": {
+        "role": "tertiary",
+        "displayName": "Client Sky Soft",
+        "canonical": "rgba(125, 211, 252, 0.10)",
+        "tonalRamp": [
+          "oklch(15% 0.101 230.3)",
+          "oklch(26% 0.101 230.3)",
+          "oklch(38% 0.101 230.3)",
+          "oklch(49% 0.101 230.3)",
+          "oklch(61% 0.101 230.3)",
+          "oklch(72% 0.101 230.3)",
+          "oklch(84% 0.101 230.3)",
+          "oklch(95% 0.101 230.3)"
+        ]
+      },
+      "violet": {
+        "role": "tertiary",
+        "displayName": "Muted Violet",
+        "canonical": "#C4B5FD",
+        "tonalRamp": [
+          "oklch(15% 0.101 293.6)",
+          "oklch(26% 0.101 293.6)",
+          "oklch(38% 0.101 293.6)",
+          "oklch(49% 0.101 293.6)",
+          "oklch(61% 0.101 293.6)",
+          "oklch(72% 0.101 293.6)",
+          "oklch(84% 0.101 293.6)",
+          "oklch(95% 0.101 293.6)"
+        ]
+      },
+      "violet-soft": {
+        "role": "tertiary",
+        "displayName": "Muted Violet Soft",
+        "canonical": "rgba(196, 181, 253, 0.10)",
+        "tonalRamp": [
+          "oklch(15% 0.101 293.6)",
+          "oklch(26% 0.101 293.6)",
+          "oklch(38% 0.101 293.6)",
+          "oklch(49% 0.101 293.6)",
+          "oklch(61% 0.101 293.6)",
+          "oklch(72% 0.101 293.6)",
+          "oklch(84% 0.101 293.6)",
+          "oklch(95% 0.101 293.6)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles (PageHeader)."
+      },
+      "stat": {
+        "displayName": "Stat",
+        "purpose": "Headline numbers in stat rows; tabular figures."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Sentence-case section titles (StageSection)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default page text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Stat labels, controls, table cells, buttons."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Notes, consequence lines, helper text."
+      },
+      "mono-id": {
+        "displayName": "Mono ID",
+        "purpose": "Record IDs, emails, file sizes, timestamps only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "menu",
+        "value": "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
+        "purpose": "Dropdowns and pickers (Tailwind shadow-lg)."
+      },
+      {
+        "name": "overlay",
+        "value": "0 25px 50px -12px rgba(0,0,0,0.25)",
+        "purpose": "Modals and drawers (Tailwind shadow-2xl)."
+      },
+      {
+        "name": "card",
+        "value": "0 1px 2px rgba(0,0,0,0.4)",
+        "purpose": "Legacy token, barely used."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-quint",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Page entrance (0.35s), fill-bar sweep, login reveals."
+      },
+      {
+        "name": "state",
+        "value": "150ms ease-out",
+        "purpose": "Colour/opacity state changes, hover-reveal."
+      },
+      {
+        "name": "chevron",
+        "value": "200ms",
+        "purpose": "Section chevron rotation."
+      },
+      {
+        "name": "reveal",
+        "value": "0.25s ease-out, 30ms stagger",
+        "purpose": "Staggered fade-in; all motion gated on prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Emerald fill for the main action in a section (Add story, Send proposal).",
+      "html": "<button class=\"ds-btn-primary\">Add story</button>",
+      "css": ".ds-btn-primary{background:var(--emerald,#22D3A8);color:var(--bg,#0B0F17);font:600 12px/1.5 Manrope,system-ui,sans-serif;padding:6px 12px;border:0;border-radius:6px;cursor:pointer;transition:background-color .15s}.ds-btn-primary:hover{background:rgba(34,211,168,.85)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px rgba(34,211,168,.6);}"
+    },
+    {
+      "name": "Delete Control",
+      "kind": "button",
+      "refersTo": "button-destructive-idle",
+      "description": "The one destructive control: quiet bordered button that arms inline into a red confirm with consequence line.",
+      "html": "<div class=\"ds-del\"><button class=\"ds-del-idle\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\"><path d=\"M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6\"/></svg>Delete</button><span class=\"ds-del-q\">Delete permanently?<small>Removes the story and its history.</small></span><button class=\"ds-del-confirm\">Yes, delete</button><button class=\"ds-del-cancel\">Cancel</button></div>",
+      "css": ".ds-del{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font:12px/1.5 Manrope,system-ui,sans-serif}.ds-del-idle{display:inline-flex;gap:6px;align-items:center;background:transparent;border:1px solid var(--rule,#26303F);color:var(--ink-muted,#A3ADBD);padding:6px 12px;border-radius:6px;font:inherit;cursor:pointer;transition:color .15s,border-color .15s}.ds-del-idle:hover{border-color:rgba(251,113,133,.4);color:var(--red,#FB7185)}.ds-del-q{color:var(--ink-strong,#F8FAFC)}.ds-del-q small{display:block;font-size:11px;color:var(--ink-faint,#6B7585)}.ds-del-confirm{background:rgba(251,113,133,.15);border:1px solid rgba(251,113,133,.4);color:var(--red,#FB7185);font:500 12px/1.5 Manrope,system-ui,sans-serif;padding:6px 12px;border-radius:6px;cursor:pointer}.ds-del-confirm:hover{background:rgba(251,113,133,.25)}.ds-del-confirm:focus-visible,.ds-del-idle:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg,#0B0F17),0 0 0 4px rgba(251,113,133,.7)}.ds-del-cancel{background:none;border:0;color:var(--ink-faint,#6B7585);font:inherit;padding:6px 8px;cursor:pointer}.ds-del-cancel:hover{color:var(--ink-strong,#F8FAFC)}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Elevated-ground field; border turns emerald on focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Project name\">",
+      "css": ".ds-input{background:var(--bg-elevated,#131825);color:var(--ink,#E8ECF2);border:1px solid var(--rule,#26303F);border-radius:6px;padding:6px 10px;font:12px/1.5 Manrope,system-ui,sans-serif;color-scheme:dark;transition:border-color .15s}.ds-input::placeholder{color:var(--ink-faint,#6B7585)}.ds-input:focus{outline:none;border-color:var(--emerald,#22D3A8)}"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "chip-status",
+      "description": "Status word on its own 15% tint; colour follows the four meanings.",
+      "html": "<span class=\"ds-chip ds-chip-done\">Completed</span> <span class=\"ds-chip ds-chip-flight\">In progress</span> <span class=\"ds-chip ds-chip-warn\">Owed</span>",
+      "css": ".ds-chip{display:inline-flex;padding:2px 6px;border-radius:4px;font:500 11px/1.4 Manrope,system-ui,sans-serif}.ds-chip-done{background:rgba(34,211,168,.15);color:var(--emerald,#22D3A8)}.ds-chip-flight{background:rgba(125,211,252,.15);color:var(--sky,#7DD3FC)}.ds-chip-warn{background:rgba(251,191,36,.15);color:var(--amber,#FBBF24)}"
+    },
+    {
+      "name": "Stage Section",
+      "kind": "card",
+      "refersTo": "stage-section",
+      "description": "Forward section container: lifecycle mark, sentence-case title, folded summary, neutral 1px rule panel.",
+      "html": "<section class=\"ds-stage\"><button class=\"ds-stage-h\" aria-expanded=\"true\"><span class=\"ds-mark ds-mark-current\"><i></i></span><h2>Proposal</h2><span class=\"ds-stage-sum\">Sent Sep 12 · 4 sections</span><svg class=\"ds-chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div class=\"ds-stage-b\">Section body</div></section>",
+      "css": ".ds-stage{background:var(--surface,#161C2A);border:1px solid var(--rule,#26303F);border-radius:8px;font-family:Manrope,system-ui,sans-serif}.ds-stage-h{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px 10px 16px;background:none;border:0;text-align:left;cursor:pointer;border-radius:8px}.ds-stage-h:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(34,211,168,.6)}.ds-stage-h h2{margin:0;font-size:14px;font-weight:600;color:var(--ink-strong,#F8FAFC)}.ds-stage-sum{font-size:12.5px;color:var(--ink-muted,#A3ADBD);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-chev{margin-left:auto;color:var(--ink-faint,#6B7585)}.ds-mark{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;flex-shrink:0}.ds-mark-current{box-shadow:0 0 0 2px var(--surface,#161C2A),0 0 0 4px rgba(34,211,168,.7)}.ds-mark-current i{width:8px;height:8px;border-radius:50%;background:var(--emerald,#22D3A8)}.ds-stage-b{border-top:1px solid var(--rule,#26303F);padding:16px;font-size:13px;color:var(--ink,#E8ECF2)}"
+    },
+    {
+      "name": "Stat Row",
+      "kind": "custom",
+      "refersTo": "stat-cell",
+      "description": "Numbers band on 1px gap dividers; tabular sans values, colour only for status.",
+      "html": "<dl class=\"ds-stats\"><div><dt>Project value</dt><dd class=\"v\">$24,000</dd></div><div><dt>Paid / owed</dt><dd class=\"v\"><span class=\"ok\">$12,000</span><span class=\"sl\"> / </span><span class=\"warn\">$12,000</span></dd><dd>Value − paid</dd></div><div><dt>Delivery due</dt><dd class=\"v\">Oct 20, 2026</dd><dd class=\"late\">3 days late</dd></div></dl>",
+      "css": ".ds-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule,#26303F);border:1px solid var(--rule,#26303F);border-radius:8px;overflow:hidden;margin:0;font-family:Manrope,system-ui,sans-serif}.ds-stats>div{background:var(--surface,#161C2A);padding:12px 16px}.ds-stats dt{font-size:12px;color:var(--ink-muted,#A3ADBD)}.ds-stats dd{margin:4px 0 0;font-size:12px;color:var(--ink-muted,#A3ADBD)}.ds-stats dd.v{font-size:18px;font-weight:600;color:var(--ink-strong,#F8FAFC);font-variant-numeric:tabular-nums;line-height:1.25}.ds-stats .ok{color:var(--emerald,#22D3A8)}.ds-stats .warn{color:var(--amber,#FBBF24)}.ds-stats .sl{color:var(--ink-faint,#6B7585);font-weight:400}.ds-stats .late{color:var(--red,#FB7185);font-weight:500}"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Active item on emerald-soft with a 2px emerald edge marker and emerald icon.",
+      "html": "<nav class=\"ds-nav\"><a class=\"is-active\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\"><path d=\"M3 12h18M3 6h18M3 18h12\"/></svg>Projects</a><a href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\"><circle cx=\"12\" cy=\"12\" r=\"8\"/></svg>Earnings</a></nav>",
+      "css": ".ds-nav{display:flex;flex-direction:column;gap:4px;background:var(--sidebar,#0D121C);padding:12px;font-family:Manrope,system-ui,sans-serif}.ds-nav a{position:relative;display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;font-size:13px;color:var(--ink-muted,#A3ADBD);text-decoration:none;transition:all .15s}.ds-nav a svg{color:var(--ink-faint,#6B7585)}.ds-nav a:hover{color:var(--ink-strong,#F8FAFC);background:rgba(22,28,42,.6)}.ds-nav a:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(34,211,168,.6)}.ds-nav a.is-active{color:var(--ink-strong,#F8FAFC);background:rgba(34,211,168,.10)}.ds-nav a.is-active svg{color:var(--emerald,#22D3A8)}.ds-nav a.is-active::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:2px;border-radius:9999px;background:var(--emerald,#22D3A8)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Night Ledger",
+    "overview": "A dark, dense working surface for people who come back to it many times a day: the COO checking money, leads moving stories, engineers logging work. Near-black ground, slightly lifted panels, hairline rules, and a small set of vivid semantic colours that only show up when something is done, owed, late, or client-visible. Text is small (13px body) because the screen holds a lot of it. Hierarchy comes from weight and ink tone, not size jumps.\n\nThe system is mid-migration. The project detail page (`/pipeline/[id]`) set the forward direction: neutral panels on 1px rules, sentence-case section titles, a lifecycle mark instead of a coloured rail, numbers in tabular sans. Older pages still use the shared `Section` component with a coloured left rail and an uppercase spaced title, plus `.eyebrow` labels. Treat those as legacy. New and reworked surfaces follow the StageSection pattern.",
+    "keyCharacteristics": [
+      "Dark tonal layering (bg, elevated, surface) with 1px rules; almost no shadow.",
+      "Colour carries status only, and always sits next to a word that says the same thing.",
+      "Manrope everywhere, tabular figures for numbers, JetBrains Mono only for IDs and machine strings.",
+      "Dense: 11-13px working text, 6px/12px control padding, 12px gaps between panels.",
+      "Collapsible sections that remember their state per viewer (localStorage)."
+    ],
+    "rules": [
+      {
+        "name": "The Paired Word Rule",
+        "body": "Every status colour sits beside a word that says the same thing (\"3 days late\", \"Fully paid\", \"Done\"). Colour confirms; it never carries meaning alone.",
+        "section": "colors"
+      },
+      {
+        "name": "The Four Meanings Rule",
+        "body": "Emerald = done/paid/go, amber = needs attention, red = late/off-track/destructive, sky = client-visible or in flight. A colour that isn't saying one of these stays neutral.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Sans Rule",
+        "body": "Numbers that line up (money, hours, counts, step numbers) use Manrope with tabular figures (`.tabnum`). Mono is for identifiers, not for numerals.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Section titles, labels and buttons are sentence case at their natural tracking. Uppercase spaced labels are legacy (see Do's and Don'ts).",
+        "section": "typography"
+      },
+      {
+        "name": "The Rule Not Shadow Rule",
+        "body": "Anything that sits in the page flow is separated by a 1px rule or a ground step. Shadow is reserved for things that float above the page.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** build new sections with StageSection: neutral surface panel, 1px rule, 8px radius, sentence-case 14px title, a one-line summary that survives folding.",
+      "**Do** pair every status colour with words that say the same thing.",
+      "**Do** keep emerald, amber, red and sky to their four meanings: done/paid/go, attention, late/destructive, client-visible.",
+      "**Do** set money, counts and hours in Manrope with tabular figures; keep JetBrains Mono for IDs, emails and machine strings.",
+      "**Do** route every delete and archive through DeleteControl.",
+      "**Do** give every interactive element a visible focus ring (emerald at 60%, red for destructive).",
+      "**Do** switch dense tables to stacked cards below md."
+    ],
+    "donts": [
+      "**Don't** add coloured left rails or tone dots to section containers; that is the legacy Section look.",
+      "**Don't** use uppercase letter-spaced eyebrow labels for new titles or labels.",
+      "**Don't** use shadows on in-flow panels; shadows belong to menus, modals and drawers.",
+      "**Don't** use Fraunces or any display face on dashboard surfaces.",
+      "**Don't** carry this dark palette into the client portal; it has its own world.",
+      "**Don't** use `window.confirm` or a custom modal for destructive actions."
+    ]
+  }
+}

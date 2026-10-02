@@ -9,15 +9,16 @@ import { listPeopleOptions } from "@/lib/quotes";
 import { listSprintOptions } from "@/lib/sprints";
 import { listProjectLogForProject } from "@/lib/project-log";
 import { listAllInvoices } from "@/lib/money";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Section } from "@/components/ui/Section";
+import { ArrowLeft, ExternalLink } from "lucide-react";
+import { StageSection } from "@/components/projects/StageSection";
+import { ArchiveQuoteControl } from "@/components/pipeline/ArchiveQuoteControl";
 import { QuoteSheetEditor } from "@/components/pipeline/QuoteSheetEditor";
 import { QuoteInvoices } from "@/components/pipeline/QuoteInvoices";
 import { DealStageChip } from "@/components/pipeline/DealStageChip";
 import { ProjectLogTimeline } from "@/components/projects/ProjectLogTimeline";
-import { deadlineRiskClass, deadlineRiskLabel } from "@/lib/deadline";
 import { assertCanAccess } from "@/lib/page-guard";
 import { canMutate } from "@/lib/authz";
+import { PROJECT_STATUS_CHOICES } from "@/lib/quote-types";
 
 const fmtCurrency = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -56,124 +57,107 @@ export default async function QuoteDetailPage({ params, searchParams }: Params) 
     (quote.status === "Sent. Awaiting Approval." || quote.status === "Draft");
 
   const fromClient = searchParams?.fromClient ?? null;
+  // Invoices are live from signing (kickoff invoice) until the final one is paid.
+  const journeyIdx = (PROJECT_STATUS_CHOICES as readonly string[]).indexOf(quote.projectStatus ?? "");
 
   const projectInvoices = allInvoices
     .filter((inv) => inv.quoteRecordIds.includes(quote.id))
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 
   return (
-    <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 sm:py-5">
-      <div className="mb-3 text-[11px] font-mono text-ink-faint flex items-center gap-3">
-        {fromClient ? (
-          <Link href={`/clients/${fromClient}?highlight=${quote.id}`} className="hover:text-emerald">
-            ← Back to client
-          </Link>
-        ) : (
-          <Link href="/pipeline" className="hover:text-emerald">← All quotes</Link>
-        )}
-      </div>
+    <main className="max-w-[1240px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      <Link
+        href={fromClient ? `/clients/${fromClient}?highlight=${quote.id}` : "/pipeline"}
+        className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-muted hover:text-ink-strong rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald/60"
+      >
+        <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
+        {fromClient ? "Back to account" : "Projects"}
+      </Link>
 
-      <PageHeader
-        title={quote.projectName}
-        subtitle={
-          <>
-            Quote {quote.autonumber ? `#${quote.autonumber}` : ""} · {quote.client}
-            {quote.preparedBy && quote.preparedBy !== "—" ? ` · Prepared by ${quote.preparedBy}` : ""} · {fmtDate(quote.preparedDate)}
-          </>
-        }
-        meta={
-          <div className="text-right">
-            <div className="text-[24px] font-semibold tabnum text-ink-strong leading-none">
-              {fmtCurrency(quote.totalCost)}
-            </div>
-            <div className="mt-1 text-[11px] text-ink-muted tabnum font-mono">
-              {fmtCurrency(quote.totalPaid)} paid · {fmtCurrency(quote.amountOwed)} owed
-            </div>
-          </div>
-        }
-      />
+      <header className="mt-3 mb-4 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <h1 className="text-[24px] font-semibold text-ink-strong leading-tight tracking-[-0.01em]">
+            {quote.projectName}
+          </h1>
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-muted">
+            <span>{quote.client}</span>
+            {quote.companyId && quote.company && (
+              <Link href={`/clients/${quote.companyId}`} className="text-ink hover:text-emerald underline-offset-4 hover:underline">
+                {quote.company}
+              </Link>
+            )}
+            {quote.autonumber && <span className="tabnum">Quote #{quote.autonumber}</span>}
+            {quote.preparedDate && <span>Prepared {fmtDate(quote.preparedDate)}</span>}
+            {stale && (
+              <span className="px-2 py-0.5 rounded bg-red-soft text-red text-[12px] font-medium">
+                No reply in {days} days
+              </span>
+            )}
+          </p>
+        </div>
 
-      {/* Status chips */}
-      <div className="mb-5 flex items-center gap-2 flex-wrap text-[12px]">
-        <DealStageChip quoteId={quote.id} initialStatus={quote.status} canEdit={canEdit} />
-        <span className="px-2.5 py-1 bg-bg-elevated border border-rule rounded text-ink">
-          <span className="text-ink-faint mr-1">Proposal:</span>{quote.projectStatus ?? "—"}
-        </span>
-        {quote.proposalType && (
-          <span className="px-2.5 py-1 bg-bg-elevated border border-rule rounded text-ink">
-            {quote.proposalType}
-          </span>
-        )}
-        {quote.totalHours != null && (
-          <span className="px-2.5 py-1 bg-bg-elevated border border-rule rounded font-mono text-ink">
-            {quote.totalHours}h
-          </span>
-        )}
-        {quote.deliveryDueDate && quote.status !== "Paid" && (
-          <span
-            className={`px-2.5 py-1 rounded font-medium ${deadlineRiskClass(quote.deadlineRisk)}`}
-            title={`Client Delivery Due Date: ${new Date(quote.deliveryDueDate).toLocaleDateString()}`}
-          >
-            {deadlineRiskLabel(quote.deadlineRisk, quote.deliveryDueDate)}
-          </span>
-        )}
-        {stale && (
-          <span className="px-2.5 py-1 bg-red-soft text-red border border-red/30 rounded font-medium">
-            Stalled {days}d
-          </span>
-        )}
-        <span className="ml-auto flex gap-2">
-          {quote.companyId && (
-            <Link
-              href={`/clients/${quote.companyId}`}
-              className="px-3 py-1.5 text-[12px] bg-bg-elevated border border-emerald/40 text-emerald font-medium rounded hover:bg-emerald/10 transition-colors"
-            >
-              View account{quote.company ? `: ${quote.company}` : ""} ↗
-            </Link>
-          )}
+        <div className="flex flex-wrap items-center gap-2">
+          <DealStageChip quoteId={quote.id} initialStatus={quote.status} canEdit={canEdit} />
           <a
             href={quote.webQuoteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-1.5 text-[12px] bg-emerald text-bg font-medium rounded hover:bg-emerald/80 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium bg-emerald text-bg rounded-md hover:bg-emerald/85 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
-            Web Quote ↗
+            Open web quote
+            <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
           </a>
           <a
             href={quote.airtableUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-1.5 text-[12px] bg-bg-elevated border border-rule text-ink rounded hover:border-ink-muted transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] text-ink border border-rule rounded-md hover:border-rule-strong hover:text-ink-strong transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald/60"
           >
-            Airtable ↗
+            Airtable
+            <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
           </a>
-        </span>
-      </div>
+          <ArchiveQuoteControl
+            quoteId={quote.id}
+            projectName={quote.projectName}
+            label="Archive"
+            redirectTo="/pipeline"
+          />
+        </div>
+      </header>
 
       <QuoteSheetEditor
         quoteId={quote.id}
         people={people}
         sprints={sprints}
         canEdit={canEdit}
+        overview={{
+          totalPaid: quote.totalPaid,
+          amountOwed: quote.amountOwed,
+          deadlineRisk: quote.deadlineRisk,
+          dealStage: quote.status,
+        }}
+        afterScope={
+          <>
+            <QuoteInvoices
+              quoteId={quote.id}
+              invoices={projectInvoices}
+              canEdit={canEdit}
+              state={journeyIdx >= 6 ? "done" : journeyIdx >= 2 ? "current" : "upcoming"}
+            />
+            <StageSection
+              id="activity"
+              title="Activity"
+              summary={logEntries.length === 0 ? "Nothing logged yet" : `${logEntries.length} ${logEntries.length === 1 ? "event" : "events"}`}
+              defaultOpen={false}
+              storageKey={`pj:${quote.id}:activity`}
+            >
+              <div className="p-4">
+                <ProjectLogTimeline entries={logEntries} />
+              </div>
+            </StageSection>
+          </>
+        }
       />
-
-      <div className="mt-6">
-        <Section
-          title="Project log"
-          tone="neutral"
-          collapsible
-          defaultOpen={false}
-          storageKey={`qs:${quote.id}:log`}
-          meta={`${logEntries.length} ${logEntries.length === 1 ? "event" : "events"}`}
-        >
-          <ProjectLogTimeline entries={logEntries} />
-        </Section>
-      </div>
-
-      <div className="mt-6">
-        <QuoteInvoices quoteId={quote.id} invoices={projectInvoices} canEdit={canEdit} />
-      </div>
     </main>
-
   );
 }

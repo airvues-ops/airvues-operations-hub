@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { ArrowUpRight, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ChevronRight, Plus, X } from "lucide-react";
 
 import {
   DndContext,
@@ -47,6 +47,8 @@ type Props = {
   onReordered?: (next: QuoteDetail) => void;
   onChanged?: (next: QuoteDetail) => void;
   groupByMonth?: boolean;
+  /** Flush inside a parent section: no box of its own. */
+  bare?: boolean;
   /** Retainer Effective Date. Present => the filter offers billing periods
    *  (anniversary-anchored) instead of calendar months. */
   periodAnchor?: string | null;
@@ -70,7 +72,7 @@ const autoRows = (text: string) =>
   Math.max(2, text.split("\n").length, Math.ceil(text.length / 34));
 
 const fmtMoney = (n: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(n);
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: n % 1 === 0 ? 0 : 2 }).format(n);
 
 function statusTone(status: string | null): string {
   if (!status) return "bg-bg-elevated text-ink-muted";
@@ -94,12 +96,14 @@ function InlineText({
   disabled,
   multiline = false,
   placeholder,
+  className = "",
 }: {
   value: string;
   onSave: (v: string) => Promise<void>;
   disabled?: boolean;
   multiline?: boolean;
   placeholder?: string;
+  className?: string;
 }) {
   const [draft, setDraft] = useState(value);
   const [pending, setPending] = useState(false);
@@ -136,7 +140,9 @@ function InlineText({
           }
         }}
         disabled={disabled || pending}
-        className={`${baseCls} resize-y min-h-[2rem] [field-sizing:content]`}
+        // Grows with its text, but shows at most ~3 lines until focused so one
+        // long description can't stretch a row across the screen.
+        className={`${baseCls} resize-none min-h-[2rem] max-h-[4.6rem] focus:max-h-none overflow-hidden focus:overflow-auto [field-sizing:content] ${className}`}
       />
     );
   }
@@ -156,7 +162,7 @@ function InlineText({
         }
       }}
       disabled={disabled || pending}
-      className={baseCls}
+      className={`${baseCls} ${className}`}
     />
   );
 }
@@ -175,6 +181,8 @@ function InlineNumber({
   const initial = value == null ? "" : String(value);
   const [draft, setDraft] = useState(initial);
   const [pending, setPending] = useState(false);
+  // Currency reads as money at rest; the raw number only appears while editing.
+  const [editing, setEditing] = useState(!isCurrency);
 
   useEffect(() => {
     if (!pending) setDraft(value == null ? "" : String(value));
@@ -192,14 +200,35 @@ function InlineNumber({
     }
   };
 
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        disabled={disabled || pending}
+        onClick={(e) => {
+          stopBubble(e);
+          setEditing(true);
+        }}
+        className="w-full rounded px-1.5 py-1 text-[12px] text-ink-strong tabnum text-right border border-transparent hover:border-rule focus-visible:outline-none focus-visible:border-emerald disabled:opacity-60"
+        aria-label={`Edit amount${value != null ? `, currently ${fmtMoney(value)}` : ""}`}
+      >
+        {value != null ? fmtMoney(value) : "—"}
+      </button>
+    );
+  }
+
   return (
     <input
       type="number"
       inputMode="decimal"
+      autoFocus={isCurrency}
       step={isCurrency ? "0.01" : "0.1"}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
+      onBlur={async () => {
+        await commit();
+        if (isCurrency) setEditing(false);
+      }}
       onClick={stopBubble}
       onKeyDown={(e) => {
         if (e.key === "Enter") (e.target as HTMLInputElement).blur();
@@ -209,7 +238,7 @@ function InlineNumber({
         }
       }}
       disabled={disabled || pending}
-      className="w-full bg-transparent border border-transparent hover:border-rule focus:border-emerald focus:bg-bg-elevated rounded px-1.5 py-1 text-[12px] text-ink-strong font-mono tabnum text-right focus:outline-none disabled:opacity-60"
+      className="w-full bg-transparent border border-transparent hover:border-rule focus:border-emerald focus:bg-bg-elevated rounded px-1.5 py-1 text-[12px] text-ink-strong tabnum text-right focus:outline-none disabled:opacity-60"
     />
   );
 }
@@ -420,7 +449,7 @@ function TagChipEditor({
               aria-label={`Remove tag ${t}`}
               disabled={pending}
             >
-              ×
+              <X aria-hidden="true" className="h-3 w-3" />
             </button>
           )}
         </span>
@@ -537,29 +566,35 @@ function SortableStoryRow({
         )}
       </td>
 
-      <td className="px-2 py-1.5 max-w-[180px]">
+      <td className="px-2 py-1.5 min-w-[280px] align-top">
         {canEdit ? (
-          <InlineText value={s.name} onSave={(v) => onPatch(s.id, { name: v })} />
+          <InlineText value={s.name} onSave={(v) => onPatch(s.id, { name: v })} className="font-medium text-ink-strong" />
         ) : onRowClick ? (
           <button
             type="button"
             onClick={() => onRowClick(s.id)}
-            className="px-1.5 py-1 text-ink-strong font-medium truncate text-left hover:text-emerald hover:underline underline-offset-2 w-full"
+            className="px-1.5 py-1 text-ink-strong font-medium text-left hover:text-emerald hover:underline underline-offset-2 w-full"
             title={`Open ${s.name}`}
           >
             {s.name}
           </button>
         ) : (
-          <div className="px-1.5 py-1 text-ink font-medium truncate" title={s.name}>{s.name}</div>
+          <div className="px-1.5 py-1 text-ink-strong font-medium">{s.name}</div>
         )}
-      </td>
-
-
-      <td className="px-2 py-1.5 max-w-[240px]">
         {canEdit ? (
-          <InlineText value={s.description} multiline onSave={(v) => onPatch(s.id, { description: v })} placeholder="—" />
+          <InlineText
+            value={s.description}
+            multiline
+            onSave={(v) => onPatch(s.id, { description: v })}
+            placeholder="Add a description"
+            className="text-ink-muted"
+          />
         ) : (
-          <div className="px-1.5 py-1 text-ink-muted whitespace-pre-wrap break-words">{s.description || "—"}</div>
+          s.description && (
+            <div className="px-1.5 pb-1 text-ink-muted whitespace-pre-wrap break-words line-clamp-3" title={s.description}>
+              {s.description}
+            </div>
+          )
         )}
       </td>
 
@@ -567,7 +602,7 @@ function SortableStoryRow({
         {canEdit ? (
           <InlineNumber value={s.hours} onSave={(v) => onPatch(s.id, { hours: v })} />
         ) : (
-          <div className="px-1.5 py-1 text-right tabnum text-ink font-mono">
+          <div className="px-1.5 py-1 text-right tabnum text-ink">
             {s.hours != null ? s.hours.toFixed(1) : "—"}
           </div>
         )}
@@ -581,10 +616,10 @@ function SortableStoryRow({
               value={s.completedDate ?? ""}
               onChange={(e) => void onPatch(s.id, { completedDate: e.target.value || null })}
               disabled={pending}
-              className="w-full bg-transparent border border-transparent hover:border-rule focus:border-emerald focus:bg-bg-elevated rounded px-1.5 py-1 text-[12px] text-ink font-mono focus:outline-none disabled:opacity-60"
+              className="w-full bg-transparent border border-transparent hover:border-rule focus:border-emerald focus:bg-bg-elevated rounded px-1.5 py-1 text-[12px] text-ink tabnum focus:outline-none disabled:opacity-60"
             />
           ) : (
-            <div className="px-1.5 py-1 text-ink-muted font-mono text-[11px]">
+            <div className="px-1.5 py-1 text-ink-muted tabnum text-[12px]">
               {s.completedDate ?? "—"}
             </div>
           )}
@@ -594,7 +629,7 @@ function SortableStoryRow({
           {canEdit ? (
             <InlineNumber value={s.cost} onSave={(v) => onPatch(s.id, { cost: v })} isCurrency />
           ) : (
-            <div className="px-1.5 py-1 text-right tabnum text-ink-strong font-mono">
+            <div className="px-1.5 py-1 text-right tabnum text-ink-strong">
               {s.cost != null ? fmtMoney(s.cost) : "—"}
             </div>
           )}
@@ -612,11 +647,11 @@ function SortableStoryRow({
         </td>
       )}
 
-      <td className="px-2 py-1.5 max-w-[200px]">
+      <td className="px-2 py-1.5 min-w-[160px] max-w-[220px] align-top">
         {canEdit ? (
           <InlineText value={s.clientNotes} multiline onSave={(v) => onPatch(s.id, { clientNotes: v })} placeholder="—" />
         ) : (
-          <div className="px-1.5 py-1 text-ink-muted whitespace-pre-wrap break-words">{s.clientNotes || "—"}</div>
+          <div className="px-1.5 py-1 text-ink-muted whitespace-pre-wrap break-words line-clamp-3" title={s.clientNotes}>{s.clientNotes || "—"}</div>
         )}
       </td>
 
@@ -720,7 +755,8 @@ function BulkBar({
           onClick={() => { setShowAssign((o) => !o); setPickedIds([]); }}
           className="px-2 py-1 text-[11px] bg-bg-elevated border border-rule rounded text-ink hover:border-ink-muted disabled:opacity-50"
         >
-          Assign engineer ▾
+          Assign engineer
+          <ChevronDown aria-hidden="true" className="inline h-3 w-3 ml-1 -mt-px" />
         </button>
         {showAssign && (
           <>
@@ -834,7 +870,7 @@ function FragmentGroup({
   collapsedTagKeys?: Set<string>;
   onToggleCollapsedTag?: (compoundKey: string) => void;
 }) {
-  const colSpan = groupByMonth ? 11 : 10;
+  const colSpan = groupByMonth ? 10 : 9;
   return (
     <>
       <tr className="bg-bg-elevated border-y border-rule">
@@ -856,19 +892,17 @@ function FragmentGroup({
               <span className="text-[14px] font-semibold text-ink-strong group-hover:text-emerald transition-colors">
                 {group.label}
               </span>
-              {isCurrent && (
-                <span className="text-[10px] font-mono uppercase tracking-wider text-emerald">Current</span>
-              )}
+              {isCurrent && <span className="sr-only">(current month)</span>}
             </button>
             <div className="flex items-center gap-1.5">
-              <span className="px-2 py-0.5 rounded border border-rule bg-bg/60 text-[11px] font-mono tabnum text-ink">
+              <span className="px-2 py-0.5 rounded border border-rule bg-bg/60 text-[11px] tabnum text-ink">
                 {group.stories.length} {group.stories.length === 1 ? "story" : "stories"}
               </span>
-              <span className="px-2 py-0.5 rounded border border-rule bg-bg/60 text-[11px] font-mono tabnum text-ink-strong">
+              <span className="px-2 py-0.5 rounded border border-rule bg-bg/60 text-[11px] tabnum text-ink-strong">
                 {group.totalHours}h
               </span>
               {!groupByMonth && (
-                <span className="px-2 py-0.5 rounded border border-rule bg-bg/60 text-[11px] font-mono tabnum text-ink-strong">
+                <span className="px-2 py-0.5 rounded border border-rule bg-bg/60 text-[11px] tabnum text-ink-strong">
                   {fmtMoney(group.totalCost)}
                 </span>
               )}
@@ -986,10 +1020,10 @@ function FragmentTagSubGroup({
               </span>
             </button>
             <div className="flex items-center gap-1.5">
-              <span className="px-1.5 py-0.5 rounded border border-rule bg-bg/60 text-[10px] font-mono tabnum text-ink-muted">
+              <span className="px-1.5 py-0.5 rounded border border-rule bg-bg/60 text-[10px] tabnum text-ink-muted">
                 {stories.length} {stories.length === 1 ? "story" : "stories"}
               </span>
-              <span className="px-1.5 py-0.5 rounded border border-rule bg-bg/60 text-[10px] font-mono tabnum text-ink">
+              <span className="px-1.5 py-0.5 rounded border border-rule bg-bg/60 text-[10px] tabnum text-ink">
                 {totalHours}h
               </span>
             </div>
@@ -1037,6 +1071,7 @@ export function QuoteStoriesTable({
   onChanged,
   groupByMonth = false,
   periodAnchor = null,
+  bare = false,
 }: Props) {
   const [localStories, setLocalStories] = useState<QuoteStoryRow[]>(stories);
   const [pending, startTransition] = useTransition();
@@ -1417,10 +1452,11 @@ export function QuoteStoriesTable({
   const allSelected = visibleStories.length > 0 && selected.size === visibleStories.length;
 
   return (
-    <div className="bg-bg-elevated/60 border border-rule rounded-md overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-3 py-3 border-b border-rule bg-bg-elevated">
+    <div className={bare ? "" : "bg-bg-elevated/60 border border-rule rounded-md overflow-hidden"}>
+      {!(bare && !groupByMonth) && (
+      <div className={`flex items-center justify-between gap-3 px-3 py-3 border-b border-rule ${bare ? "px-4" : "bg-bg-elevated"}`}>
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">{title}</div>
+          <div className="text-[12px] text-ink-muted">{title}</div>
           <div className="mt-0.5 flex items-baseline gap-3">
             {groupByMonth ? (
               <div className="text-[20px] font-semibold text-ink-strong tabnum leading-none">
@@ -1430,12 +1466,12 @@ export function QuoteStoriesTable({
               <div className="text-[20px] font-semibold text-ink-strong tabnum leading-none">{fmtMoney(totalCost)}</div>
             )}
             {!groupByMonth && totalHours != null && (
-              <div className="text-[11px] text-ink-muted font-mono tabnum">
+              <div className="text-[11px] text-ink-muted tabnum">
                 {totalHours}h · {visibleStories.length} {visibleStories.length === 1 ? "story" : "stories"}
               </div>
             )}
             {groupByMonth && (
-              <div className="text-[11px] text-ink-muted font-mono tabnum">
+              <div className="text-[11px] text-ink-muted tabnum">
                 {visibleStories.length} {visibleStories.length === 1 ? "story" : "stories"}
                 {periodKey && ` of ${localStories.length}`}
                 {" · "}
@@ -1467,13 +1503,15 @@ export function QuoteStoriesTable({
             <button
               type="button"
               onClick={onAddClick}
-              className="px-3 py-1.5 text-[12px] font-semibold bg-emerald text-bg rounded hover:bg-emerald/80 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-[12px] font-semibold bg-emerald text-bg rounded hover:bg-emerald/80 transition-colors"
             >
-              {addLabel}
+              <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+              {addLabel.replace(/^\+\s*/, "")}
             </button>
           )}
         </div>
       </div>
+      )}
 
 
       {canEdit && selected.size > 0 && (
@@ -1497,11 +1535,65 @@ export function QuoteStoriesTable({
             : (emptyLabel ?? `No stories yet.${canEdit ? " Click + Add story to build the quote." : ""}`)}
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <>
+        {/* Phones: one stacked card per story — the wide table doesn't fit. */}
+        <ul className="md:hidden divide-y divide-rule-soft">
+          {visibleStories.map((s) => (
+            <li key={s.id} className="px-4 py-3">
+              {canEdit ? (
+                <InlineText value={s.name} onSave={(v) => patchStory(s.id, { name: v })} className="font-medium text-ink-strong" />
+              ) : (
+                <div className="px-1.5 py-1 font-medium text-ink-strong">{s.name}</div>
+              )}
+              {canEdit ? (
+                <InlineText
+                  value={s.description}
+                  multiline
+                  onSave={(v) => patchStory(s.id, { description: v })}
+                  placeholder="Add a description"
+                  className="text-ink-muted"
+                />
+              ) : (
+                s.description && <p className="px-1.5 text-[12px] text-ink-muted line-clamp-3">{s.description}</p>
+              )}
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px]">
+                {canEdit ? (
+                  <InlineStatus value={s.status} onSave={(v) => patchStory(s.id, { status: v })} />
+                ) : (
+                  <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${statusTone(s.status)}`}>{s.status ?? "—"}</span>
+                )}
+                {canEdit ? (
+                  <InlineAssignees
+                    selectedIds={s.assignees.map((a) => a.id)}
+                    options={engineerOptions}
+                    onSave={(ids) => patchStory(s.id, { assigneeIds: ids })}
+                  />
+                ) : (
+                  <span className="text-ink-muted">{s.assignees.map((a) => a.name).join(", ") || "Unassigned"}</span>
+                )}
+                <span className="ml-auto tabnum text-ink-muted">
+                  {s.hours != null ? `${s.hours}h` : "—"}
+                  {!groupByMonth && s.cost != null && <span className="text-ink-strong"> · {fmtMoney(s.cost)}</span>}
+                </span>
+                {onRowClick && (
+                  <button
+                    type="button"
+                    onClick={() => onRowClick(s.id)}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-[12px] text-ink-muted hover:text-emerald border border-rule hover:border-emerald rounded"
+                  >
+                    Open
+                    <ArrowUpRight aria-hidden="true" className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden md:block overflow-x-auto">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <table className="w-full text-[12px]">
               <thead>
-                <tr className="text-left text-[10px] uppercase tracking-wider text-ink-muted border-b border-rule">
+                <tr className="text-left text-[11px] text-ink-muted border-b border-rule">
                   <th className="px-2 py-2 font-medium w-[28px]"></th>
                   <th className="px-2 py-2 font-medium w-[28px]">
                     {canEdit && (
@@ -1514,8 +1606,7 @@ export function QuoteStoriesTable({
                       />
                     )}
                   </th>
-                  <th className="px-2 py-2 font-medium">Story Name</th>
-                  <th className="px-2 py-2 font-medium">Description</th>
+                  <th className="px-2 py-2 font-medium">Story</th>
                   <th className="px-2 py-2 font-medium text-right tabnum">Hours</th>
                   {groupByMonth ? (
                     <th className="px-2 py-2 font-medium">Completed</th>
@@ -1523,13 +1614,9 @@ export function QuoteStoriesTable({
                     <th className="px-2 py-2 font-medium text-right tabnum">Cost</th>
                   )}
                   {groupByMonth && <th className="px-2 py-2 font-medium">Tags</th>}
-                  <th className="px-2 py-2 font-medium">Client Notes</th>
-                  <th className="px-2 py-2 font-medium whitespace-nowrap">
-                    Story Status<span className="ml-1 text-ink-faint normal-case tracking-normal">(internal)</span>
-                  </th>
-                  <th className="px-2 py-2 font-medium whitespace-nowrap">
-                    Engineer Assigned<span className="ml-1 text-ink-faint normal-case tracking-normal">(internal)</span>
-                  </th>
+                  <th className="px-2 py-2 font-medium">Client notes</th>
+                  <th className="px-2 py-2 font-medium" title="Internal — not shown to the client">Status</th>
+                  <th className="px-2 py-2 font-medium" title="Internal — not shown to the client">Engineer</th>
                   <th className="px-2 py-2 font-medium w-[80px]"></th>
                 </tr>
               </thead>
@@ -1575,6 +1662,7 @@ export function QuoteStoriesTable({
             </table>
           </DndContext>
         </div>
+        </>
       )}
     </div>
   );

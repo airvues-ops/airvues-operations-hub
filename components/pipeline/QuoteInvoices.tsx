@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import type { MoneyInvoice } from "@/lib/money";
-import { Section } from "@/components/ui/Section";
+import { StageSection, type StageState } from "@/components/projects/StageSection";
 import { InvoiceSheet } from "@/components/money/InvoiceSheet";
 
 const fmtCurrency = (n: number) =>
@@ -21,9 +21,11 @@ type Props = {
   quoteId: string;
   invoices: MoneyInvoice[];
   canEdit: boolean;
+  /** Lifecycle position on the project page. */
+  state?: StageState;
 };
 
-export function QuoteInvoices({ quoteId, invoices, canEdit }: Props) {
+export function QuoteInvoices({ quoteId, invoices, canEdit, state }: Props) {
   const [selected, setSelected] = useState<MoneyInvoice | null>(null);
 
   const total = invoices
@@ -35,14 +37,17 @@ export function QuoteInvoices({ quoteId, invoices, canEdit }: Props) {
 
   return (
     <>
-      <Section
+      <StageSection
+        id="invoices"
         title="Invoices"
-        tone="amber"
-        collapsible
-        defaultOpen={false}
-        storageKey={`qs:${quoteId}:invoices`}
-        bodyPadding={false}
-        meta={`${invoices.length} ${invoices.length === 1 ? "invoice" : "invoices"} · ${fmtCurrency(total)} invoiced · ${fmtCurrency(outstanding)} outstanding`}
+        state={state}
+        defaultOpen={invoices.length > 0}
+        storageKey={`pj:${quoteId}:invoices`}
+        summary={
+          invoices.length === 0
+            ? "None yet"
+            : `${invoices.length} ${invoices.length === 1 ? "invoice" : "invoices"} · ${fmtCurrency(total)} invoiced · ${fmtCurrency(outstanding)} outstanding`
+        }
       >
         {invoices.length === 0 ? (
           <div className="px-5 py-6 text-center text-[13px] text-ink-muted">
@@ -51,14 +56,14 @@ export function QuoteInvoices({ quoteId, invoices, canEdit }: Props) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-bg-elevated border-b border-rule">
+              <thead className="border-b border-rule">
                 <tr>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-muted">#</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Date</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Description</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Type</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Status</th>
-                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Amount</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-medium text-ink-muted">#</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-medium text-ink-muted">Date</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-medium text-ink-muted">Description</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-medium text-ink-muted">Type</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-medium text-ink-muted">Status</th>
+                  <th className="px-3 py-2 text-right text-[11px] font-medium text-ink-muted">Amount</th>
                 </tr>
               </thead>
               <tbody className="row-zebra">
@@ -69,12 +74,12 @@ export function QuoteInvoices({ quoteId, invoices, canEdit }: Props) {
                     className="border-b border-rule-soft last:border-0 cursor-pointer"
                   >
                     <td className="px-3 py-2.5 text-[12px] font-mono text-ink-muted">{inv.invoiceId ?? "—"}</td>
-                    <td className="px-3 py-2.5 text-[12px] font-mono text-ink-muted">{fmtDate(inv.date)}</td>
+                    <td className="px-3 py-2.5 text-[12px] tabnum text-ink-muted">{fmtDate(inv.date)}</td>
                     <td className="px-3 py-2.5 text-[12px] text-ink max-w-[300px] truncate" title={inv.description ?? ""}>
                       {inv.description ?? "—"}
                     </td>
                     <td className="px-3 py-2.5 text-[12px] text-ink-muted">{inv.type ?? "—"}</td>
-                    <td className="px-3 py-2.5 text-[12px] text-ink-muted">{inv.status ?? "—"}</td>
+                    <td className="px-3 py-2.5 text-[12px] text-ink-muted capitalize">{inv.status ?? "—"}</td>
                     <td
                       className={`px-3 py-2.5 text-right text-[13px] tabnum font-semibold ${
                         inv.status === "paid"
@@ -92,7 +97,7 @@ export function QuoteInvoices({ quoteId, invoices, canEdit }: Props) {
             </table>
           </div>
         )}
-      </Section>
+      </StageSection>
 
       <InvoiceSheet
         invoice={selected}

@@ -47,3 +47,6 @@ scripts/output/
 
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo
+
+# Impeccable review captures (contain real client data)
+.impeccable/review/
