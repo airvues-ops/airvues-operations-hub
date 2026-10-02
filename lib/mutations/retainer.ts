@@ -9,7 +9,7 @@
 import { revalidateTag } from "next/cache";
 import { createRecords, getRecord, patchRecords } from "../airtable";
 import { Tables } from "../schema";
-import { AuthzError, deleteGate, requireRole } from "../authz";
+import { AuthzError, deleteGate, logDeletion, requireRole } from "../authz";
 import { listRetainerTiers } from "../retainers";
 import { legacyTierChoiceFor } from "../retainer-catalog";
 import type { RetainerTier } from "../retainer-types";
@@ -29,7 +29,6 @@ async function gate(): Promise<{ error: string } | null> {
 }
 
 function invalidate() {
-  revalidateTag("airtable");
   revalidateTag("retainers:agreements");
   revalidateTag("retainers:tiers");
 }
@@ -250,6 +249,7 @@ export async function setRetainerArchived(
 
   try {
     await patchRecords(QUOTE.id, [{ id, fields: { "Retainer Archived": archived } }]);
+    await logDeletion({ what: `${archived ? "Archived" : "Restored"} retainer (${id})`, projectId: id });
     invalidate();
     return { ok: true };
   } catch (e) {

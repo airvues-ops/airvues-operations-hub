@@ -1,9 +1,8 @@
 // /archive — everything soft-deleted, and the way back.
 //
 // Archived rows are filtered out of every board, picker and filter in the app,
-// so without this page a restore would mean opening Airtable. Role-gated to the
-// same people who can archive (admin + lead); the restore actions refuse anyone
-// else regardless.
+// so without this page a restore would mean opening Airtable. Open to anyone who
+// can archive (any signed-in user); every restore is logged with who did it.
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RestoreButton } from "@/components/archive/RestoreButton";

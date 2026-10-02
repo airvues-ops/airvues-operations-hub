@@ -5,7 +5,7 @@ import { DeleteControl } from "@/components/ui/DeleteControl";
 import { useCanDelete } from "@/components/DeletePermission";
 import { deleteSprint } from "@/lib/mutations/sprint";
 
-/** Hides itself unless the viewer is admin/lead — the action refuses anyone else anyway. */
+/** Hides itself unless the viewer can delete (any signed-in user). */
 export function DeleteSprintButton({
   sprintId,
   label,

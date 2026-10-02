@@ -10,12 +10,6 @@ import { usePathname } from "next/navigation";
 import { NAV_ITEMS, NAV_GROUPS } from "@/lib/nav";
 import { canAccessRoute, canRoleDelete, type Permission } from "@/lib/permissions";
 import type { AppRole } from "@/lib/auth";
-import { CalendarWidget } from "@/components/header/CalendarWidget";
-import { GmailWidget } from "@/components/header/GmailWidget";
-import { TimeWeatherWidget } from "@/components/header/TimeWeatherWidget";
-import type { CalendarResult } from "@/lib/calendar";
-import type { InboxResult } from "@/lib/gmail";
-import type { WeatherSnapshot } from "@/lib/weather";
 
 type SignOutHandler = () => Promise<void>;
 
@@ -47,13 +41,12 @@ type Props = {
   userRole: AppRole;
   samlActive: boolean;
   signOutAction: SignOutHandler;
-  calendarResult?: CalendarResult;
-  inboxResult?: InboxResult;
-  weather?: WeatherSnapshot;
+  /** Header widgets (weather/calendar/Gmail), streamed from the server. */
+  widgets?: React.ReactNode;
   permissions: Permission[];
 };
 
-export function MobileNav({ userEmail, userRole, samlActive, signOutAction, calendarResult, inboxResult, weather, permissions }: Props) {
+export function MobileNav({ userEmail, userRole, samlActive, signOutAction, widgets, permissions }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -93,13 +86,7 @@ export function MobileNav({ userEmail, userRole, samlActive, signOutAction, cale
             </div>
           </Link>
           <div className="flex items-center gap-2">
-            {weather && <TimeWeatherWidget weather={weather} />}
-            {calendarResult && (
-              <CalendarWidget result={calendarResult} compact />
-            )}
-            {inboxResult && (
-              <GmailWidget result={inboxResult} compact />
-            )}
+            {widgets}
             <button
               type="button"
               onClick={() => setOpen(true)}

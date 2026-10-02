@@ -4,7 +4,7 @@
 import { revalidateTag } from "next/cache";
 import { patchRecords } from "../airtable";
 import { Tables } from "../schema";
-import { canMutate, deleteGate } from "../authz";
+import { canMutate, deleteGate, logDeletion } from "../authz";
 import { getAppSession } from "../session";
 import { resolvePersonByEmail } from "../people";
 
@@ -43,7 +43,6 @@ export async function updateAnnualEarningsGoal(args: {
     await patchRecords(Tables.People.id, [
       { id: personId, fields: { "Annual Earnings Goal": goal } },
     ]);
-    revalidateTag("airtable");
     revalidateTag("scorecard:people-goals");
     return { ok: true };
   } catch (e) {
@@ -81,7 +80,6 @@ export async function updateContact(
 
   try {
     await patchRecords(Tables.People.id, [{ id: personId, fields }]);
-    revalidateTag("airtable");
     revalidateTag("client-detail:people");
     return { ok: true };
   } catch (e) {
@@ -91,7 +89,7 @@ export async function updateContact(
 
 
 /**
- * Archive or restore a person. admin/lead only.
+ * Archive or restore a person. Logged via logDeletion.
  *
  * A SOFT delete, always. People rows are payees: they carry commission
  * percentages and are linked from Team Task Payments, Stories and Time Entries.
@@ -107,7 +105,7 @@ export async function setPersonArchived(
   if (denied) return denied;
   try {
     await patchRecords(Tables.People.id, [{ id: personId, fields: { Archived: archived } }]);
-    revalidateTag("airtable");
+    await logDeletion({ what: `${archived ? "Archived" : "Restored"} person (${personId})` });
     revalidateTag("team:internal-people");
     revalidateTag("client-detail:people");
     return { ok: true };

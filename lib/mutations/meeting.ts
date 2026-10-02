@@ -5,7 +5,7 @@ import { revalidateTag } from "next/cache";
 import { del } from "@vercel/blob";
 import { waitUntil } from "@vercel/functions";
 import { createRecords, patchRecords, getRecord } from "../airtable";
-import { AuthzError, deleteGate, requireSignedIn } from "../authz";
+import { AuthzError, deleteGate, logDeletion, requireSignedIn } from "../authz";
 import { getAppSession } from "../session";
 import { resolvePersonByEmail } from "../people";
 import { MEETINGS_TABLE } from "../meetings";
@@ -27,7 +27,6 @@ async function gate(): Promise<{ error: string } | null> {
 }
 
 function invalidate(id?: string, leadId?: string | null) {
-  revalidateTag("airtable");
   revalidateTag("meetings");
   if (id) revalidateTag(`meetings:id:${id}`);
   if (leadId) revalidateTag(`meetings:lead:${leadId}`);
@@ -222,10 +221,11 @@ export async function deleteMeeting(id: string): Promise<MeetingMutationResult> 
   const g = await deleteGate();
   if (g) return g;
   try {
-    const rec = await getRecord<{ "Audio URL"?: string; Lead?: string[] }>(MEETINGS_TABLE, id);
+    const rec = await getRecord<{ "Audio URL"?: string; Lead?: string[]; Title?: string }>(MEETINGS_TABLE, id);
     const url = rec.fields["Audio URL"];
     const leadId = rec.fields.Lead?.[0] ?? null;
     await patchRecords(MEETINGS_TABLE, [{ id, fields: { Deleted: true } }]);
+    await logDeletion({ what: `Deleted meeting "${rec.fields.Title ?? id}" (${id})` });
     if (process.env.BLOB_READ_WRITE_TOKEN && url) {
       try {
         await del(url);

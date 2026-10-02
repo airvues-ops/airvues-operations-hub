@@ -3,7 +3,7 @@
 import { createContext, useContext } from "react";
 
 // Whether the signed-in viewer may delete or archive records — the client-side
-// mirror of canDelete() in lib/authz.ts (admin + lead).
+// mirror of canDelete() in lib/authz.ts (any signed-in user).
 //
 // Provided once in the (app) layout instead of threaded as a prop: StorySheet
 // alone is mounted on six pages, and a gate that has to be remembered at every

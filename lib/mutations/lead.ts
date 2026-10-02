@@ -44,7 +44,6 @@ export async function updateLeadStatus(args: {
     await patchRecords(Tables.Leads.id, [
       { id: leadId, fields: { Status: status } },
     ]);
-    revalidateTag("airtable");
     revalidateTag("leads:all");
     return { ok: true };
   } catch (e) {
@@ -73,7 +72,6 @@ export async function updateLeadTranscript(args: {
         fields: { "Paste Meeting Transcript": transcript.length > 0 ? transcript : null },
       },
     ]);
-    revalidateTag("airtable");
     revalidateTag("leads:all");
     return { ok: true };
   } catch (e) {
@@ -131,7 +129,6 @@ export async function attachLeadFiles(args: {
       [{ id: leadId, fields: { [ATTACH_FIELD]: next } }],
     );
 
-    revalidateTag("airtable");
     revalidateTag("leads:all");
 
     const all = updated[0]?.fields[ATTACH_FIELD] ?? [];

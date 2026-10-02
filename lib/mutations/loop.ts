@@ -6,7 +6,7 @@ import { randomBytes } from "crypto";
 import { del } from "@vercel/blob";
 import { waitUntil } from "@vercel/functions";
 import { createRecords, patchRecords, getRecord } from "../airtable";
-import { AuthzError, deleteGate, requireSignedIn } from "../authz";
+import { AuthzError, deleteGate, logDeletion, requireSignedIn } from "../authz";
 import { getAppSession } from "../session";
 import { resolvePersonByEmail } from "../people";
 import { RECORDINGS_TABLE } from "../loops";
@@ -29,7 +29,6 @@ async function gate(): Promise<{ error: string } | null> {
 }
 
 function invalidate(loopId?: string) {
-  revalidateTag("airtable");
   revalidateTag("loops");
   if (loopId) revalidateTag(`loops:id:${loopId}`);
 }
@@ -192,12 +191,14 @@ export async function deleteLoop(id: string): Promise<LoopMutationResult> {
     const rec = await getRecord<{
       "Video URL"?: string;
       "Poster URL"?: string;
+      Title?: string;
     }>(RECORDINGS_TABLE, id);
     const urls = [rec.fields["Video URL"], rec.fields["Poster URL"]].filter(
       (u): u is string => typeof u === "string" && u.length > 0,
     );
     // Soft-delete the row first (cheap, definitive).
     await patchRecords(RECORDINGS_TABLE, [{ id, fields: { Deleted: true } }]);
+    await logDeletion({ what: `Deleted loop "${rec.fields.Title ?? id}" (${id})` });
     // Best-effort Blob purge; don't fail the action if Blob is unreachable.
     if (process.env.BLOB_READ_WRITE_TOKEN && urls.length > 0) {
       try {

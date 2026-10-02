@@ -4,9 +4,9 @@
 "use server";
 
 import { revalidateTag } from "next/cache";
-import { createRecords, patchRecords, deleteRecord } from "../airtable";
+import { createRecords, patchRecords, deleteRecord, getRecord } from "../airtable";
 import { Tables } from "../schema";
-import { AuthzError, deleteGate, requireSignedIn } from "../authz";
+import { AuthzError, deleteGate, logDeletion, requireSignedIn } from "../authz";
 import { paymentBlockMessage, storiesBlockedByPayments } from "../delete-guards";
 import { logEventInternal } from "./project-log";
 import { createCompletionPayments } from "../completion-payments";
@@ -59,10 +59,8 @@ function buildStoryFields(patch: StoryPatch): Record<string, unknown> {
 }
 
 function invalidateStoryCaches() {
-  // Every cached Airtable read in lib/airtable.ts is tagged with "airtable" — this
-  // umbrella revalidation alone is sufficient. The explicit tags below are kept for
-  // intent + future-proofing if the umbrella is ever scoped down.
-  revalidateTag("airtable");
+  // The Stories table and its linked tables are already cleared by the write
+  // itself (invalidateTable in lib/airtable.ts). These tags document intent.
   revalidateTag("engineering:stories");
   revalidateTag("engineering:people");
   revalidateTag("sprints:all");
@@ -271,7 +269,7 @@ export async function createStory(input: CreateStoryInput): Promise<CreateStoryR
 }
 
 /**
- * Hard-delete a story. admin/lead only, and refused outright when commission
+ * Hard-delete a story. Logged via logDeletion, and refused outright when commission
  * payments hang off it — see lib/delete-guards.ts for why.
  */
 export async function deleteStory(storyId: string): Promise<MutationResult> {
@@ -280,7 +278,14 @@ export async function deleteStory(storyId: string): Promise<MutationResult> {
   try {
     const blocked = await storiesBlockedByPayments([storyId]);
     if (blocked.length > 0) return { error: paymentBlockMessage(blocked) };
+    // Read before deleting: once it's gone, the name and project are too.
+    const story = await getRecord<Record<string, unknown>>(Tables.Stories.id, storyId);
     await deleteRecord(Tables.Stories.id, storyId);
+    const quote = story.fields["Quote"];
+    await logDeletion({
+      what: `Deleted story "${String(story.fields["Story Name"] ?? storyId)}" (${storyId})`,
+      projectId: Array.isArray(quote) && typeof quote[0] === "string" ? quote[0] : null,
+    });
     invalidateStoryCaches();
     revalidateTag("pipeline:all-quotes");
     return { ok: true };

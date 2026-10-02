@@ -33,7 +33,6 @@ async function gate(): Promise<{ error: string } | null> {
 }
 
 function invalidate() {
-  revalidateTag("airtable");
   revalidateTag("retainers:requests");
   revalidateTag("retainers:comments");
 }

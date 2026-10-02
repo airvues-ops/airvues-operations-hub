@@ -12,7 +12,8 @@ export type ProjectLogEventType =
   | "Story created"
   | "Story completed"
   | "Invoice created"
-  | "Partner status changed";
+  | "Partner status changed"
+  | "Record deleted";
 
 export type ProjectLogEntry = {
   id: string;

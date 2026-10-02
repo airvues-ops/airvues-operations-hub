@@ -47,8 +47,7 @@ export default async function LoopDetailPage({
   const isOwner = !!me && me.id === loop.ownerId;
   const canEditTags = isAdmin || isOwner;
   const canDelete = isAdmin || isOwner;
-  // Deleting is role-gated (admin/lead) even for the person who recorded it —
-  // the Server Action refuses anyone else, so don't offer them the button.
+  // Any signed-in user may delete; the action records who did it.
   const mayDelete = await viewerCanDelete();
 
   const analysis = loopAnalysisState(loop);

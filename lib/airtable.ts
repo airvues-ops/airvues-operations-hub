@@ -2,7 +2,8 @@
 // Field IDs are referenced via `lib/schema.ts`, not field names. Field renames in Airtable don't break the dashboard.
 import "server-only";
 
-import { unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
+import { TABLE_LINKS, TABLE_NAMES } from "./table-links";
 
 const BASE_ID = process.env.AIRTABLE_BASE_ID!;
 const TOKEN = process.env.AIRTABLE_TOKEN!;
@@ -125,6 +126,40 @@ export async function getRecord<F = Record<string, unknown>>(
   return (await resp.json()) as AirtableRecord<F>;
 }
 
+/**
+ * Called after every successful write. Clears cached reads of the written
+ * table and of every table linked to it (their lookups/rollups may have
+ * changed) — and nothing else. Reads are tagged by whatever the caller passed
+ * (id or name), so both spellings are cleared.
+ *
+ * This replaces the old umbrella revalidateTag("airtable") on every mutation,
+ * which wiped all cached reads on any save and made the next page load
+ * re-download whole tables (Stories alone is ~5s cold).
+ */
+function invalidateTable(tableIdOrName: string): void {
+  const id =
+    tableIdOrName in TABLE_NAMES
+      ? tableIdOrName
+      : Object.keys(TABLE_NAMES).find((k) => TABLE_NAMES[k] === tableIdOrName);
+  const ids = id ? [id, ...(TABLE_LINKS[id] ?? [])] : [];
+  const tags = new Set([tableIdOrName]);
+  for (const t of ids) {
+    tags.add(t);
+    tags.add(TABLE_NAMES[t]);
+  }
+  try {
+    for (const t of tags) revalidateTag(`airtable:${t}`);
+  } catch {
+    // Outside a Next request (scripts) there is no cache to clear.
+  }
+  // An unknown table can't be scoped — fall back to clearing everything.
+  if (!id) {
+    try {
+      revalidateTag("airtable");
+    } catch {}
+  }
+}
+
 export async function patchRecords<F = Record<string, unknown>>(
   tableIdOrName: string,
   patches: Patch[],
@@ -150,6 +185,7 @@ export async function patchRecords<F = Record<string, unknown>>(
     out.push(...data.records);
     if (i + 10 < patches.length) await new Promise((r) => setTimeout(r, 220));
   }
+  invalidateTable(tableIdOrName);
   return out;
 }
 
@@ -169,6 +205,7 @@ export async function deleteRecord(
     const body = await resp.text();
     throw new Error(`Airtable DELETE ${tableIdOrName}/${recordId} failed (${resp.status}): ${body.slice(0, 300)}`);
   }
+  invalidateTable(tableIdOrName);
 }
 
 export async function createRecords<F = Record<string, unknown>>(
@@ -195,5 +232,6 @@ export async function createRecords<F = Record<string, unknown>>(
     out.push(...data.records);
     if (i + 10 < records.length) await new Promise((r) => setTimeout(r, 220));
   }
+  invalidateTable(tableIdOrName);
   return out;
 }

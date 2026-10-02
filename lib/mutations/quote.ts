@@ -6,7 +6,7 @@
 import { revalidateTag } from "next/cache";
 import { createRecords, getRecord, patchRecords, deleteRecord } from "../airtable";
 import { Tables } from "../schema";
-import { AuthzError, deleteGate, requireSignedIn } from "../authz";
+import { AuthzError, deleteGate, logDeletion, requireSignedIn } from "../authz";
 import { paymentBlockMessage, storiesBlockedByPayments } from "../delete-guards";
 import { getQuoteDetail } from "../quotes";
 import { getStoryById } from "../engineering";
@@ -32,7 +32,6 @@ async function gate(): Promise<{ error: string } | null> {
 }
 
 function invalidateQuote(quoteId: string) {
-  revalidateTag("airtable");
   revalidateTag("pipeline:all-quotes");
   revalidateTag("scorecard:sales-quotes");
   revalidateTag(`quote:${quoteId}:stories`);
@@ -499,9 +498,17 @@ export async function bulkDeleteQuoteStories(
     const blocked = await storiesBlockedByPayments(storyIds);
     if (blocked.length > 0) return { error: paymentBlockMessage(blocked) };
     // No batch DELETE wrapper — fire sequentially in small concurrency.
+    const names: string[] = [];
     for (const id of storyIds) {
+      // Read before deleting: once it's gone, the name is too.
+      const story = await getRecord<Record<string, unknown>>(Tables.Stories.id, id);
+      names.push(`"${String(story.fields["Story Name"] ?? id)}" (${id})`);
       await deleteRecord(Tables.Stories.id, id);
     }
+    await logDeletion({
+      what: `Deleted ${storyIds.length} ${storyIds.length === 1 ? "story" : "stories"}: ${names.join(", ")}`,
+      projectId: quoteId,
+    });
     invalidateQuote(quoteId);
     revalidateTag("engineering:stories");
     const quote = await getQuoteDetail(quoteId);
@@ -573,7 +580,6 @@ export async function createDraftQuote(args: {
     const created = await createRecords(Tables.Quotes.id, [{ fields }]);
     const newId = created[0]?.id;
     if (!newId) return { error: "Failed to create quote" };
-    revalidateTag("airtable");
     revalidateTag("pipeline:all-quotes");
     await logEventInternal({
       accountId: args.preparedForId ?? null,
@@ -608,17 +614,8 @@ export async function setQuoteArchived(
   if (denied) return denied;
   try {
     await patchRecords(Tables.Quotes.id, [{ id: quoteId, fields: { Archived: archived } }]);
+    await logDeletion({ what: `${archived ? "Archived" : "Restored"} project (${quoteId})`, projectId: quoteId });
     invalidateQuote(quoteId);
-    // Reuses the existing "Project status changed" choice rather than inventing
-    // one — createRecords runs with typecast, so a new string would silently add
-    // an option to the production select.
-    await logEventInternal({
-      projectId: quoteId,
-      eventType: "Project status changed",
-      detail: archived
-        ? "Archived — hidden from Projects. Nothing was deleted."
-        : "Restored to the Projects board.",
-    });
     return { ok: true };
   } catch (e) {
     return { error: (e as Error).message };

@@ -1051,7 +1051,7 @@ export const Tables = {
       "ID": { id: "fldT8P5azbnqunZ75", type: "autoNumber" },
       "Project": { id: "fldRPLNixSAir9oL6", type: "multipleRecordLinks" },
       "Account": { id: "fldp7tl9hrG9GYtQe", type: "multipleRecordLinks" },
-      "Event Type": { id: "fld8EPdwhwDsfdzA1", type: "singleSelect", options: { choices: [{"name":"Lead created"},{"name":"Discovery notes added"},{"name":"Proposal sent"},{"name":"Proposal signed"},{"name":"Payment received"},{"name":"Deadline changed"},{"name":"Story created"},{"name":"Story created"},{"name":"Loom attached"},{"name":"Slack notification sent"},{"name":"Invoice created"},{"name":"Retainer month opened"},{"name":"Retainer month closed"},{"name":"Partner status changed"},{"name":"Story completed"},{"name":"Project status changed"},{"name":"Proposal drafted"}] } },
+      "Event Type": { id: "fld8EPdwhwDsfdzA1", type: "singleSelect", options: { choices: [{"name":"Lead created"},{"name":"Discovery notes added"},{"name":"Proposal sent"},{"name":"Proposal signed"},{"name":"Payment received"},{"name":"Deadline changed"},{"name":"Story created"},{"name":"Story created"},{"name":"Loom attached"},{"name":"Slack notification sent"},{"name":"Invoice created"},{"name":"Retainer month opened"},{"name":"Retainer month closed"},{"name":"Partner status changed"},{"name":"Story completed"},{"name":"Project status changed"},{"name":"Proposal drafted"},{"name":"Record deleted"}] } },
       "Timestamp": { id: "fldwJFV7NuSMWQPNH", type: "dateTime" },
       "Detail": { id: "fldksTFqxOTChXJFf", type: "multilineText" },
     },

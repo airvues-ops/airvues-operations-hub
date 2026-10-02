@@ -21,7 +21,7 @@ export type NavItem = {
   group: NavGroup;
   showInSidebar: boolean;
   showOnHome: boolean;
-  /** Hide from nav unless the viewer's role can delete (admin/lead). */
+  /** Hide from nav unless the viewer can delete (any signed-in user). */
   requiresDelete?: boolean;
 };
 

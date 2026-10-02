@@ -4,7 +4,7 @@
 import { revalidateTag } from "next/cache";
 import { createRecords, deleteRecord, getRecord, listRecords, patchRecords } from "../airtable";
 import { Tables } from "../schema";
-import { AuthzError, deleteGate, requireSignedIn } from "../authz";
+import { AuthzError, deleteGate, logDeletion, requireSignedIn } from "../authz";
 
 export type CreateSprintInput = {
   number: number;
@@ -29,7 +29,6 @@ async function gate(): Promise<{ error: string } | null> {
 }
 
 function invalidate() {
-  revalidateTag("airtable");
   revalidateTag("sprints:all");
   revalidateTag("kpi:sprint-delivery");
 }
@@ -81,7 +80,7 @@ export async function updateSprintStatus(
 }
 
 /**
- * Hard-delete a sprint. admin/lead only.
+ * Hard-delete a sprint. Any signed-in user; logged via logDeletion.
  *
  * Stories are NOT deleted — they lose their 📆Sprints link and fall back to the
  * backlog, which is where an unplanned story belongs anyway. Sprint Capacity
@@ -120,6 +119,9 @@ export async function deleteSprint(
     }
 
     await deleteRecord(Tables.Sprints.id, sprintId);
+    await logDeletion({
+      what: `Deleted sprint "${String(sprint.fields["Sprint Name"] ?? sprintId)}" (${sprintId}); ${storiesUnlinked} stories moved to backlog`,
+    });
     invalidate();
     revalidateTag("engineering:stories");
     return { ok: true, storiesUnlinked, capacityRowsDeleted: mine.length };

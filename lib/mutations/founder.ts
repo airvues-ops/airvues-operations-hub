@@ -31,7 +31,6 @@ export async function updateRetirementNumber(args: {
     await patchRecords(Tables.People.id, [
       { id: personId, fields: { "Retirement Number": value } },
     ]);
-    revalidateTag("airtable");
     revalidateTag(`founder:profile:${personId}`);
     return { ok: true };
   } catch (e) {

@@ -70,7 +70,6 @@ export async function updateClientStatuses(args: {
 
   try {
     await patchRecords(Tables.People.id, [{ id: clientId, fields }]);
-    revalidateTag("airtable");
     revalidateTag("accounts:all");
     revalidateTag("clients:people");
 

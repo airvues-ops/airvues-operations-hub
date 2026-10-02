@@ -74,7 +74,6 @@ export async function setSprintCapacity(input: {
       ]);
     }
 
-    revalidateTag("airtable");
     revalidateTag(`sprint-capacity:${sprintId}`);
     revalidateTag("sprint-capacity:all");
     return { ok: true };

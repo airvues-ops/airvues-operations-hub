@@ -51,9 +51,7 @@ const ROUTE_PERMISSION: Record<string, Permission> = {
   team: "Operations",
   stack: "Operations",
   hygiene: "Operations",
-  // The page itself is also role-gated to admin/lead (canDelete) — the
-  // permission only decides who sees the nav link.
-  archive: "Operations",
+  // /archive is deliberately absent: anyone who can delete can restore.
   founder: "Founder",
 };
 
@@ -62,13 +60,11 @@ const ROUTE_PERMISSION: Record<string, Permission> = {
 // (admin/lead/etc.) only governs mutations via requireRole(). An admin who
 // is not granted a view permission should not see that section.
 
-// Roles allowed to delete or archive records. Client-safe so the nav can hide
-// what a viewer cannot use; lib/authz.ts imports the same list for the real
-// server-side gate (deleteGate).
-export const DELETE_ROLES: AppRole[] = ["admin", "lead", "editor"];
-
+// Any signed-in user may delete or archive. Traceability comes from the
+// Project Log entry every delete writes (logDeletion in lib/authz.ts), not
+// from a role gate. Client-safe so the nav can use it too.
 export function canRoleDelete(role: AppRole | null | undefined): boolean {
-  return !!role && DELETE_ROLES.includes(role);
+  return !!role;
 }
 
 export function hasPermission(

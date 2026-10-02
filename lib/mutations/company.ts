@@ -4,7 +4,7 @@
 import { revalidateTag } from "next/cache";
 import { patchRecords } from "../airtable";
 import { Tables } from "../schema";
-import { AuthzError, deleteGate, requireSignedIn } from "../authz";
+import { AuthzError, deleteGate, logDeletion, requireSignedIn } from "../authz";
 
 export type CompanyPatch = {
   // New blueprint fields
@@ -79,7 +79,6 @@ export async function updateCompany(
     await patchRecords(Tables.Companies.id, [
       { id: companyId, fields: buildFields(patch) },
     ]);
-    revalidateTag("airtable");
     revalidateTag("client-detail:companies");
     return { ok: true };
   } catch (e) {
@@ -88,7 +87,7 @@ export async function updateCompany(
 }
 
 /**
- * Archive or restore an account (company). admin/lead only.
+ * Archive or restore an account (company). Logged via logDeletion.
  *
  * A SOFT delete, always. A company is the tenant key for quotes, retainers,
  * requests and attributed revenue — deleting one would detach every number
@@ -104,7 +103,7 @@ export async function setCompanyArchived(
   if (denied) return denied;
   try {
     await patchRecords(Tables.Companies.id, [{ id: companyId, fields: { Archived: archived } }]);
-    revalidateTag("airtable");
+    await logDeletion({ what: `${archived ? "Archived" : "Restored"} account (${companyId})`, accountId: companyId });
     revalidateTag("clients:companies");
     revalidateTag("client-detail:companies");
     return { ok: true };

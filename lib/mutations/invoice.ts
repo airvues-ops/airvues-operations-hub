@@ -118,7 +118,6 @@ function mapExtrasToFields(input: EditableInvoiceExtras, fields: Record<string, 
 }
 
 function invalidate() {
-  revalidateTag("airtable");
   revalidateTag("money:all-invoices");
 }
 

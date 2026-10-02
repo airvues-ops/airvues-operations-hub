@@ -80,6 +80,7 @@ export async function getRecentInbox(maxResults = 8): Promise<InboxResult> {
       {
         headers: { Authorization: `Bearer ${token}` },
         next: { revalidate: 60 },
+        signal: AbortSignal.timeout(3000),
       },
     );
     if (listResp.status === 401 || listResp.status === 403) return { kind: "no-token" };
@@ -101,6 +102,7 @@ export async function getRecentInbox(maxResults = 8): Promise<InboxResult> {
           {
             headers: { Authorization: `Bearer ${token}` },
             next: { revalidate: 60 },
+            signal: AbortSignal.timeout(3000),
           },
         );
         if (!r.ok) return null;

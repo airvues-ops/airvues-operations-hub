@@ -27,7 +27,6 @@ const CMT = Tables.RetainerRequestComments;
 export type PortalResult<T = unknown> = ({ ok: true } & T) | { error: string };
 
 function invalidate() {
-  revalidateTag("airtable");
   revalidateTag("retainers:requests");
   revalidateTag("retainers:comments");
 }

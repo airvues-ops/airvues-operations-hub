@@ -88,7 +88,7 @@ export function StorySheet({
   onFilterByEngineer,
   onFilterByClient,
 }: Props) {
-  // Role gate (admin/lead) first; the prop can still force it off where a
+  // Delete gate (any signed-in user) first; the prop can still force it off where a
   // caller mounts the sheet read-only.
   const viewerCanDelete = useCanDelete();
   const allowDelete = viewerCanDelete && (canDelete ?? canEdit);

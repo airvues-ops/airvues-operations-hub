@@ -101,6 +101,8 @@ export async function getUpcomingEvents(maxResults = 8): Promise<CalendarResult>
         headers: { Authorization: `Bearer ${token}` },
         // Cache for 60s — fresh enough for "what's next" without hammering the API
         next: { revalidate: 60 },
+        // A slow Google response must not hold the header widget open forever.
+        signal: AbortSignal.timeout(3000),
       },
     );
     if (resp.status === 401 || resp.status === 403) {

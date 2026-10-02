@@ -57,7 +57,10 @@ const FALLBACK = {
 async function fetchWeather(lat: number, lon: number): Promise<{ temp: number; code: number } | null> {
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=auto`;
-    const resp = await fetch(url, { next: { revalidate: 600 } }); // 10 min cache
+    const resp = await fetch(url, {
+      next: { revalidate: 600 }, // 10 min cache
+      signal: AbortSignal.timeout(3000),
+    });
     if (!resp.ok) return null;
     const data = await resp.json();
     if (!data?.current) return null;
