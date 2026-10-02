@@ -4,7 +4,7 @@ import { Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { PipelineQuote } from "@/lib/pipeline";
-import { rowFlag, stageMeta, usd } from "./project-list";
+import { rowFlag, stageMeta, stagePillStyle, usd } from "./project-list";
 import type { Sort, SortKey } from "./types";
 
 const fmtDate = (iso: string | null) =>
@@ -137,7 +137,7 @@ export function ProjectTable({
                     )}
                   </td>
                   <td className="px-3 py-2.5 whitespace-nowrap">
-                    <span className={`px-2 py-0.5 rounded text-[12px] font-medium ${st.tone}`}>{st.label}</span>
+                    <span className="px-2 py-0.5 rounded text-[12px] font-medium" style={stagePillStyle(st.color)}>{st.label}</span>
                     {stageFlag && <div className="mt-1 text-[12px] font-medium tabnum text-amber">{stageFlag.text}</div>}
                   </td>
                   <td className="px-3 py-2.5 text-right tabnum font-semibold text-ink-strong whitespace-nowrap">

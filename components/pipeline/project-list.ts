@@ -23,21 +23,33 @@ export const STAGE_TABS: { key: StageBucket; label: string }[] = [
   { key: "lost", label: "Cancelled / rejected" },
 ];
 
-/** Airtable Deal Stage → what people call it, plus its colour role. */
-const STAGE_META: Record<string, { label: string; tone: string }> = {
-  Draft: { label: "Draft", tone: "bg-rule/60 text-ink-muted" },
-  "Sent. Awaiting Approval.": { label: "Awaiting approval", tone: "bg-amber-soft text-amber" },
-  "Approved and Signed": { label: "Signed", tone: "bg-sky-soft text-sky" },
-  "Awaiting Payment": { label: "Awaiting payment", tone: "bg-sky-soft text-sky" },
-  "Project In Progress": { label: "In progress", tone: "bg-sky-soft text-sky" },
-  Paid: { label: "Paid", tone: "bg-emerald-soft text-emerald" },
-  Cancelled: { label: "Cancelled", tone: "bg-red-soft text-red" },
-  Rejected: { label: "Rejected", tone: "bg-red-soft text-red" },
-  "Auditing 🚩": { label: "Auditing", tone: "bg-amber-soft text-amber" },
-};
+/**
+ * Airtable Deal Stage values in lifecycle order, with the name people use and
+ * the stage's colour. One colour per stage, used everywhere a stage shows:
+ * pills in the list and table, the stage dropdown, and the preview border.
+ */
+export const DEAL_STAGES = [
+  { value: "Draft", label: "Draft", color: "#8B95A7" },
+  { value: "Sent. Awaiting Approval.", label: "Awaiting approval", color: "#FBBF24" },
+  { value: "Approved and Signed", label: "Signed", color: "#C4B5FD" },
+  { value: "Awaiting Payment", label: "Awaiting payment", color: "#F0ABFC" },
+  { value: "Project In Progress", label: "In progress", color: "#7DD3FC" },
+  { value: "Paid", label: "Paid", color: "#22D3A8" },
+  { value: "Auditing 🚩", label: "Auditing", color: "#FB923C" },
+  { value: "Rejected", label: "Rejected", color: "#FB7185" },
+  { value: "Cancelled", label: "Cancelled", color: "#A8A29E" },
+] as const;
 
-export function stageMeta(status: string | null): { label: string; tone: string } {
-  return (status && STAGE_META[status]) || { label: status ?? "No stage", tone: "bg-rule/60 text-ink-muted" };
+const NO_STAGE = { label: "No stage", color: "#8B95A7" };
+
+export function stageMeta(status: string | null): { label: string; color: string } {
+  const s = DEAL_STAGES.find((d) => d.value === status);
+  return s ? { label: s.label, color: s.color } : { ...NO_STAGE, label: status ?? NO_STAGE.label };
+}
+
+/** Pill colours from a stage colour: tinted ground, full-strength text. */
+export function stagePillStyle(color: string): { color: string; backgroundColor: string } {
+  return { color, backgroundColor: `${color}1F` };
 }
 
 export function daysSince(iso: string | null): number {

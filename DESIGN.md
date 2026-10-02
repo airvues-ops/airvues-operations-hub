@@ -25,6 +25,10 @@ colors:
   sky-soft: "rgba(125, 211, 252, 0.10)"
   violet: "#C4B5FD"
   violet-soft: "rgba(196, 181, 253, 0.10)"
+  stage-draft: "#8B95A7"
+  stage-awaiting-payment: "#F0ABFC"
+  stage-auditing: "#FB923C"
+  stage-cancelled: "#A8A29E"
 typography:
   headline:
     fontFamily: "Manrope, -apple-system, system-ui, sans-serif"
@@ -168,6 +172,8 @@ A cool near-black base with four vivid signal colours tuned to read against it.
 
 **The Four Meanings Rule.** Emerald = done/paid/go, amber = needs attention, red = late/off-track/destructive, sky = client-visible or in flight. A colour that isn't saying one of these stays neutral.
 
+**The Deal Stage Palette (exception, 2026-10).** Deal stages (Quotes.Status) each own one colour, defined once in `DEAL_STAGES` (`components/pipeline/project-list.ts`): Draft #8B95A7, Awaiting approval #FBBF24, Signed #C4B5FD, Awaiting payment #F0ABFC, In progress #7DD3FC, Paid #22D3A8, Auditing #FB923C, Rejected #FB7185, Cancelled #A8A29E. Used for stage pills (colour text on a 12% tint, `stagePillStyle`), the stage dropdown swatches, and the Projects preview border (60% alpha). Always shown with the stage name. Don't reuse these hues for anything that isn't a deal stage.
+
 ## Typography
 
 **Body Font:** Manrope (with -apple-system, system-ui)
@@ -235,6 +241,9 @@ Label (12px muted), value (18px semibold tabular), optional note (12px muted, co
 
 ### Stage tracker (ProjectOverview)
 Seven numbered circles joined by 2px connectors. Finished steps are filled emerald with a check, the current step has an emerald ring, upcoming steps are outlined. When the viewer can edit, every step is a button that moves the project there (hover fills with elevated ground, emerald focus ring). The current step is `aria-current="step"`. An off-track deal adds a red-soft banner above the tracker with the reason in words.
+
+### Dropdowns (Combobox)
+`components/ui/Combobox.tsx` is the dropdown: a button that opens a list, with type-to-filter (on by default above 7 options), ↑ ↓ / Enter / Esc, type-ahead when unsearchable, check on the current value, optional colour swatches. Use it instead of native `<select>` on new work. Don't wrap it in a `<label>` (the label re-clicks the button); put a visible caption beside it and pass `label` for the accessible name.
 
 ### Inputs / Fields
 - **Style:** elevated ground, 1px rule border, 6px radius, 12px text, `color-scheme: dark`.

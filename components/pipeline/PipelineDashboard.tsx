@@ -7,6 +7,7 @@ import { ArrowUpRight, LayoutList, Plus, Search, SlidersHorizontal, Table2, X } 
 import type { PipelineQuote } from "@/lib/pipeline";
 import { ProjectPreview } from "./ProjectPreview";
 import { ProjectTable } from "./ProjectTable";
+import { Combobox } from "@/components/ui/Combobox";
 import { setMyPreference } from "@/lib/mutations/preferences";
 import {
   STAGE_STATUSES,
@@ -16,6 +17,7 @@ import {
   applySort,
   rowFlag,
   stageMeta,
+  stagePillStyle,
   usd,
   usdShort,
 } from "./project-list";
@@ -314,32 +316,31 @@ export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilte
           {advancedCount > 0 && <span className="tabnum text-emerald">{advancedCount}</span>}
         </button>
 
-        <select
-          aria-label="Sort"
+        <Combobox
+          label="Sort"
           value={`${sort.key}:${sort.dir}`}
-          onChange={(e) => {
-            const [key, dir] = e.target.value.split(":");
+          options={SORT_OPTIONS.map((o) => ({ value: `${o.sort.key}:${o.sort.dir}`, label: o.label }))}
+          onChange={(v) => {
+            const [key, dir] = v.split(":");
             setSort({ key, dir } as Sort);
           }}
-          className={`${field} cursor-pointer`}
-        >
-          {SORT_OPTIONS.map((o) => (
-            <option key={o.label} value={`${o.sort.key}:${o.sort.dir}`}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+          placeholder="Sort"
+          searchable={false}
+          className="w-[170px]"
+        />
 
-        <select
-          aria-label="Group"
+        <Combobox
+          label="Group"
           value={groupBy}
-          onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-          className={`${field} cursor-pointer`}
-        >
-          <option value="none">No grouping</option>
-          <option value="client">Group by client</option>
-          <option value="company">Group by account</option>
-        </select>
+          options={[
+            { value: "none", label: "No grouping" },
+            { value: "client", label: "Group by client" },
+            { value: "company", label: "Group by account" },
+          ]}
+          onChange={(v) => setGroupBy(v as GroupBy)}
+          searchable={false}
+          className="w-[160px]"
+        />
 
         {anyFilter && (
           <button
@@ -364,36 +365,48 @@ export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilte
           className="mb-3 p-3 bg-surface border border-rule rounded-lg grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
         >
           <FilterField label="Type">
-            <select value={filter.proposalType} onChange={(e) => set("proposalType", e.target.value as Filter["proposalType"])} className={`${field} w-full`}>
-              <option value="all">All types</option>
-              <option value="Airtable Solutions Proposal">Airtable Solutions</option>
-              <option value="Retainer Agreement">Retainer</option>
-            </select>
+            <Combobox
+              label="Type"
+              value={filter.proposalType}
+              options={[
+                { value: "all", label: "All types" },
+                { value: "Airtable Solutions Proposal", label: "Airtable Solutions" },
+                { value: "Retainer Agreement", label: "Retainer" },
+              ]}
+              onChange={(v) => set("proposalType", v as Filter["proposalType"])}
+            />
           </FilterField>
           <FilterField label="Client">
-            <select value={filter.client ?? ""} onChange={(e) => set("client", e.target.value || null)} className={`${field} w-full`}>
-              <option value="">All clients</option>
-              {clients.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+            <Combobox
+              label="Client"
+              value={filter.client ?? ""}
+              options={[{ value: "", label: "All clients" }, ...clients.map((c) => ({ value: c, label: c }))]}
+              onChange={(v) => set("client", v || null)}
+              searchable
+            />
           </FilterField>
           <FilterField label="Prepared by">
-            <select value={filter.preparedBy ?? ""} onChange={(e) => set("preparedBy", e.target.value || null)} className={`${field} w-full`}>
-              <option value="">Anyone</option>
-              {preparers.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
+            <Combobox
+              label="Prepared by"
+              value={filter.preparedBy ?? ""}
+              options={[{ value: "", label: "Anyone" }, ...preparers.map((p) => ({ value: p, label: p }))]}
+              onChange={(v) => set("preparedBy", v || null)}
+              searchable
+            />
           </FilterField>
           <FilterField label="Delivery deadline">
-            <select value={filter.deadlineRisk} onChange={(e) => set("deadlineRisk", e.target.value as Filter["deadlineRisk"])} className={`${field} w-full`}>
-              <option value="all">Any</option>
-              <option value="needs-attention">Late or due within 7 days</option>
-              <option value="overdue">Late</option>
-              <option value="red">Due within 3 days</option>
-              <option value="yellow">Due in 4–7 days</option>
-            </select>
+            <Combobox
+              label="Delivery deadline"
+              value={filter.deadlineRisk}
+              options={[
+                { value: "all", label: "Any" },
+                { value: "needs-attention", label: "Late or due within 7 days" },
+                { value: "overdue", label: "Late" },
+                { value: "red", label: "Due within 3 days" },
+                { value: "yellow", label: "Due in 4–7 days" },
+              ]}
+              onChange={(v) => set("deadlineRisk", v as Filter["deadlineRisk"])}
+            />
           </FilterField>
           <div className="min-w-0">
             <span className="block mb-1 text-[12px] text-ink-muted">Prepared between</span>
@@ -504,7 +517,7 @@ export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilte
                                 {flag.text}
                               </span>
                             )}
-                            <span className={`px-2 py-0.5 rounded text-[11.5px] font-medium whitespace-nowrap ${st.tone}`}>{st.label}</span>
+                            <span className="px-2 py-0.5 rounded text-[11.5px] font-medium whitespace-nowrap" style={stagePillStyle(st.color)}>{st.label}</span>
                           </span>
                         </span>
                       </button>
@@ -528,7 +541,9 @@ export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilte
 
         <aside
           aria-label="Project preview"
-          className={`${view === "list" ? "hidden lg:block" : "hidden"} sticky top-14 bg-surface border border-rule rounded-lg max-h-[calc(100vh-4.5rem)] overflow-y-auto`}
+          // The border takes the selected project's stage colour.
+          style={selected ? { borderColor: `${stageMeta(selected.status).color}99` } : undefined}
+          className={`${view === "list" ? "hidden lg:block" : "hidden"} sticky top-14 bg-surface border border-rule rounded-lg max-h-[calc(100vh-4.5rem)] overflow-y-auto transition-colors duration-300`}
         >
           <ProjectPreview
             quote={selected}
@@ -556,11 +571,13 @@ function SummaryLink({ children, onClick, active }: { children: React.ReactNode;
   );
 }
 
+// A div, not a <label>: a label re-clicks its control, which would reopen the
+// dropdown right after an option is picked. The Combobox names itself.
 function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block min-w-0">
-      <span className="block mb-1 text-[12px] text-ink-muted">{label}</span>
+    <div className="min-w-0">
+      <span className="block mb-1 text-[12px] text-ink-muted" aria-hidden="true">{label}</span>
       {children}
-    </label>
+    </div>
   );
 }

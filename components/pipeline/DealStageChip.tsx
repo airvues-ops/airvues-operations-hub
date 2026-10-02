@@ -2,19 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { updateQuoteDealStage } from "@/lib/mutations/quote";
+import { Combobox } from "@/components/ui/Combobox";
+import { DEAL_STAGES, stageMeta } from "./project-list";
 
-const STAGES = [
-  "Draft",
-  "Sent. Awaiting Approval.",
-  "Approved and Signed",
-  "Awaiting Payment",
-  "Project In Progress",
-  "Paid",
-  "Cancelled",
-  "Rejected",
-  "Auditing 🚩",
-] as const;
+const OPTIONS = DEAL_STAGES.map((s) => ({ value: s.value, label: s.label, color: s.color }));
 
+/**
+ * Deal stage (Airtable Quotes.Status — the internal sales pipeline). Each
+ * stage has its own colour. Changes apply immediately and roll back if the
+ * save fails.
+ */
 export function DealStageChip({
   quoteId,
   initialStatus,
@@ -24,7 +21,7 @@ export function DealStageChip({
   quoteId: string;
   initialStatus: string | null;
   canEdit: boolean;
-  /** Called after the stage saved, so lists can update without a reload. */
+  /** Called on change (and again with the old value if the save fails). */
   onChange?: (status: string) => void;
 }) {
   const [status, setStatus] = useState<string | null>(initialStatus);
@@ -35,44 +32,45 @@ export function DealStageChip({
     const prev = status;
     setStatus(next);
     setErr(null);
+    onChange?.(next);
     startTransition(async () => {
       const res = await updateQuoteDealStage(quoteId, next);
       if ("error" in res) {
         setErr(res.error);
         setStatus(prev);
-      } else {
-        onChange?.(next);
+        if (prev) onChange?.(prev);
       }
     });
   }
 
   if (!canEdit) {
+    const st = stageMeta(status);
     return (
-      <span className="px-3 py-1.5 bg-bg-elevated border border-rule rounded-md text-ink-strong text-[12.5px]">
-        <span className="text-ink-faint mr-1.5">Deal stage</span>
-        {status ?? "—"}
+      <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface border border-rule rounded-md text-[12.5px]">
+        <span className="text-ink-muted">Deal stage</span>
+        <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: st.color }} />
+        <span className="text-ink-strong">{st.label}</span>
       </span>
     );
   }
 
   return (
-    <span
-      className="inline-flex items-center bg-bg-elevated border border-rule rounded-md text-[12.5px] focus-within:border-emerald"
-      title={err ?? "Sales pipeline stage — internal, not shown to the client"}
-    >
-      <span className="pl-3 text-ink-faint">Deal stage</span>
-      <select
-        value={status ?? ""}
-        onChange={(e) => handleChange(e.target.value)}
+    <div className="inline-flex flex-col gap-1">
+      <Combobox
+        label="Deal stage"
+        prefix="Deal stage"
+        value={status}
+        options={OPTIONS}
+        onChange={handleChange}
         disabled={pending}
-        className="bg-transparent text-ink-strong font-medium py-1.5 pl-1.5 pr-2 focus:outline-none cursor-pointer disabled:opacity-50"
-      >
-        {!status && <option value="">—</option>}
-        {STAGES.map((s) => (
-          <option key={s} value={s}>{s}</option>
-        ))}
-      </select>
-      {err && <span role="alert" className="pr-2.5 text-red text-[11px]">Not saved</span>}
-    </span>
+        searchable={false}
+        className="min-w-[230px]"
+      />
+      {err && (
+        <span role="alert" className="text-[12px] text-red">
+          Not saved: {err}
+        </span>
+      )}
+    </div>
   );
 }
