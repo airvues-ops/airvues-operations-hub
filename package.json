@@ -18,13 +18,13 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@vercel/blob": "^2.4.0",
     "@vercel/functions": "^3.6.2",
-    "@xmldom/xmldom": "^0.9.10",
+    "@xmldom/xmldom": "^0.9.12",
     "client-only": "^0.0.1",
     "cmdk": "^1.1.1",
     "ffmpeg-static": "^5.3.0",
     "lucide-react": "^1.21.0",
-    "next": "14.2.33",
-    "next-auth": "5.0.0-beta.20",
+    "next": "16.3.8",
+    "next-auth": "5.0.0-beta.32",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "samlify": "^2.13.0",
@@ -36,9 +36,9 @@
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
     "autoprefixer": "10.4.19",
-    "postcss": "8.4.40",
+    "postcss": "8.5.28",
     "tailwindcss": "3.4.7",
-    "tsx": "4.16.2",
+    "tsx": "4.23.15",
     "typescript": "5.5.4"
   }
 }
