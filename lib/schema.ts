@@ -882,6 +882,7 @@ export const Tables = {
       "Annual Earnings Goal": { id: "fldMjapvfBeTwTot8", type: "currency" },
       "Annual Stories Goal": { id: "fld4qShINxr3NuWi6", type: "number" },
       "Permissions": { id: "fldNCtKlWOSOnpx1I", type: "multipleSelects", options: { choices: [{"name":"Revenue"},{"name":"Delivery"},{"name":"Engineering"},{"name":"Operations"},{"name":"Home - Firm Pulse"},{"name":"Scorecard - Admin"},{"name":"Founder"},{"name":"Airvues"}] } },
+      "Preferences": { id: "fldYmRl8lIRbOoq3Z", type: "multilineText" },
       "Ownership Percentage": { id: "fldVChXHAS0qZC6BA", type: "percent" },
       "Retirement Number": { id: "fldKvUB7czlSSnwZX", type: "currency" },
       "Commission Model": { id: "fldr16GzP6W69OWao", type: "singleSelect", options: { choices: [{"name":"Stories"},{"name":"Sales"}] } },

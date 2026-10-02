@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, Plus, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpRight, LayoutList, Plus, Search, SlidersHorizontal, Table2, X } from "lucide-react";
 import type { PipelineQuote } from "@/lib/pipeline";
 import { ProjectPreview } from "./ProjectPreview";
+import { ProjectTable } from "./ProjectTable";
+import { setMyPreference } from "@/lib/mutations/preferences";
 import {
   STAGE_STATUSES,
   STAGE_TABS,
@@ -26,6 +28,8 @@ type Props = {
   quotes: PipelineQuote[];
   canEdit: boolean;
   initialFilter?: Partial<Filter>;
+  /** The viewer's saved choice (People.Preferences "projects.view"). */
+  initialView?: "list" | "table";
 };
 
 /**
@@ -33,7 +37,7 @@ type Props = {
  * beside it. Click (or ↑ ↓) selects, Enter / double-click / "Open project"
  * opens. Below lg there's no room for the pane, so a tap opens directly.
  */
-export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilter }: Props) {
+export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilter, initialView = "list" }: Props) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>({ ...EMPTY_FILTER, ...(initialFilter ?? {}) });
   const [sort, setSort] = useState<Sort>(DEFAULT_SORT);
@@ -41,6 +45,18 @@ export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilte
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [stageOverrides, setStageOverrides] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "table">(initialView);
+
+  // Remembered per person in Airtable, so it follows them across devices.
+  // Fire-and-forget: the switch is instant; a failed save just means the
+  // old choice comes back next visit.
+  const chooseView = (v: "list" | "table") => {
+    if (v === view) return;
+    setView(v);
+    void setMyPreference("projects.view", v).then((res) => {
+      if ("error" in res) console.warn("[projects] view preference not saved:", res.error);
+    });
+  };
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -265,6 +281,27 @@ export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilte
           <kbd className="hidden sm:block absolute right-2 top-1/2 -translate-y-1/2 px-1.5 rounded border border-rule text-[11px] text-ink-muted">/</kbd>
         </label>
 
+        <div role="radiogroup" aria-label="View" className="hidden md:inline-flex rounded-md border border-rule bg-surface p-0.5">
+          {([
+            ["list", "List", LayoutList],
+            ["table", "Table", Table2],
+          ] as const).map(([v, label, Icon]) => (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={view === v}
+              onClick={() => chooseView(v)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[12.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald/60 ${
+                view === v ? "bg-bg-elevated text-ink-strong" : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              <Icon aria-hidden="true" className="h-3.5 w-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
+
         <button
           type="button"
           onClick={() => setFiltersOpen((v) => !v)}
@@ -379,8 +416,13 @@ export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilte
         </div>
       )}
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-4 lg:items-start">
+      <div className={view === "list" ? "lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-4 lg:items-start" : ""}>
         <div className="bg-surface border border-rule rounded-lg overflow-hidden">
+          {rows.length > 0 && view === "table" && (
+            <div className="hidden md:block">
+              <ProjectTable rows={rows} sort={sort} setSort={setSort} groupKey={groupKey} groupTotals={groupTotals} />
+            </div>
+          )}
           {rows.length === 0 ? (
             <div className="px-6 py-16 text-center">
               <p className="text-[14px] text-ink-strong">No projects match.</p>
@@ -394,7 +436,8 @@ export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilte
             <ul
               ref={listRef}
               aria-label="Projects"
-              className="divide-y divide-rule-soft"
+              // Table view is md+ only; phones always get the list.
+              className={`divide-y divide-rule-soft ${view === "table" ? "md:hidden" : ""}`}
               onKeyDown={(e) => {
                 if (e.key === "ArrowDown") {
                   e.preventDefault();
@@ -485,7 +528,7 @@ export function PipelineDashboard({ quotes: initialQuotes, canEdit, initialFilte
 
         <aside
           aria-label="Project preview"
-          className="hidden lg:block sticky top-14 bg-surface border border-rule rounded-lg max-h-[calc(100vh-4.5rem)] overflow-y-auto"
+          className={`${view === "list" ? "hidden lg:block" : "hidden"} sticky top-14 bg-surface border border-rule rounded-lg max-h-[calc(100vh-4.5rem)] overflow-y-auto`}
         >
           <ProjectPreview
             quote={selected}

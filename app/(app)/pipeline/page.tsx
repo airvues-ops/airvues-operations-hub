@@ -5,6 +5,7 @@ import { listAllQuotes } from "@/lib/pipeline";
 import { PipelineDashboard } from "@/components/pipeline/PipelineDashboard";
 import { assertCanAccess } from "@/lib/page-guard";
 import { canMutate } from "@/lib/authz";
+import { getMyPreferences } from "@/lib/preferences";
 import type { StageBucket } from "@/components/pipeline/types";
 
 type SP = { deadlineRisk?: string; stage?: string; stalled?: string };
@@ -33,7 +34,7 @@ export default async function PipelinePage({ searchParams }: { searchParams?: SP
   } catch (e) {
     error = (e as Error).message;
   }
-  const canEdit = await canMutate();
+  const [canEdit, prefs] = await Promise.all([canMutate(), getMyPreferences()]);
   const deadline = DEADLINE_PARAMS.find((d) => d === searchParams?.deadlineRisk);
 
   return (
@@ -46,6 +47,7 @@ export default async function PipelinePage({ searchParams }: { searchParams?: SP
         <PipelineDashboard
           quotes={quotes}
           canEdit={canEdit}
+          initialView={prefs["projects.view"] ?? "list"}
           initialFilter={{
             deadlineRisk: deadline ?? "all",
             stage: STAGE_PARAMS[searchParams?.stage ?? ""] ?? "all",
