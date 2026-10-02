@@ -8,7 +8,7 @@ import { setQuoteArchived } from "@/lib/mutations/quote";
 /**
  * Projects have no hard delete — they carry invoices, payments and a project
  * log. Archiving takes the project off the board and leaves all of it addressable.
- * Mounted in the project drawer's action bar and on each Projects table row.
+ * Mounted in the project drawer's sticky header, next to the close button.
  */
 export function ArchiveQuoteControl({
   quoteId,

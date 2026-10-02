@@ -74,14 +74,23 @@ export function QuoteSheet({ quote, people, sprints, canEdit, onClose, onFilterB
               {quote.projectName}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-[20px] text-ink-muted hover:text-ink-strong w-7 h-7 flex items-center justify-center rounded hover:bg-bg-elevated shrink-0"
-            aria-label="Close"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <ArchiveQuoteControl
+              quoteId={quote.id}
+              projectName={quote.projectName ?? quote.client}
+              onArchived={onClose}
+              label="Archive"
+              className="justify-end"
+            />
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-[20px] text-ink-muted hover:text-ink-strong w-7 h-7 flex items-center justify-center rounded hover:bg-bg-elevated shrink-0"
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Header strip — keep the at-a-glance numbers */}
@@ -147,11 +156,6 @@ export function QuoteSheet({ quote, people, sprints, canEdit, onClose, onFilterB
           >
             All from {quote.client.split(" ")[0]}
           </button>
-          <ArchiveQuoteControl
-            quoteId={quote.id}
-            projectName={quote.projectName ?? quote.client}
-            onArchived={onClose}
-          />
         </div>
 
         {/* Editable body */}
